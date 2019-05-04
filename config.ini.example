@@ -1,0 +1,41 @@
+[pyrogram]
+api_id = [DATA EXPUNGED]
+api_hash = [DATA EXPUNGED]
+
+[plugins]
+root = plugins
+include =
+    handlers.command
+    handlers.message
+
+[proxy]
+enabled = False
+hostname = 127.0.0.1
+port = 1080
+
+[basic]
+prefix = /!
+
+[bots]
+captcha_id = [DATA EXPUNGED]
+clean_id = [DATA EXPUNGED]
+lang_id = [DATA EXPUNGED]
+noflood_id = [DATA EXPUNGED]
+noporn_id = [DATA EXPUNGED]
+nospam_id = [DATA EXPUNGED]
+user_id = [DATA EXPUNGED]
+warn_id = [DATA EXPUNGED]
+
+[channels]
+hide_channel_id = [DATA EXPUNGED]
+watch_channel_id = [DATA EXPUNGED]
+
+[custom]
+reset_day = [DATA EXPUNGED]
+time_new = [DATA EXPUNGED]
+time_ban = [DATA EXPUNGED]
+time_delete = [DATA EXPUNGED]
+
+[encrypt]
+key = [DATA EXPUNGED]
+password = [DATA EXPUNGED]
