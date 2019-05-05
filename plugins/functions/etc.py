@@ -145,7 +145,7 @@ def random_str(i: int) -> str:
 def receive_data(message: Message) -> dict:
     text = get_text(message)
     try:
-        assert text is not None, f"Can't get text from message: {message}"
+        assert text is not "", f"Can't get text from message: {message}"
         data = loads(text)
         return data
     except Exception as e:
