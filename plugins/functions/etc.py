@@ -114,9 +114,18 @@ def get_command_context(message: Message) -> str:
 def get_text(message: Message) -> str:
     text = ""
     if message.text:
-        text = message.text
+        text += message.text
     elif message.caption:
-        text = message.caption
+        text += message.caption
+
+    if message.entities:
+        for en in message.entities:
+            if en.url:
+                text += f"\n{en.url}"
+    elif message.caption_entities:
+        for en in message.caption_entities:
+            if en.url:
+                text += f"\n{en.url}"
 
     return text
 
