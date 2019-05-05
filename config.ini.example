@@ -31,6 +31,8 @@ hide_channel_id = [DATA EXPUNGED]
 watch_channel_id = [DATA EXPUNGED]
 
 [custom]
+limit_ban = [DATA EXPUNGED]
+limit_delete = [DATA EXPUNGED]
 reset_day = [DATA EXPUNGED]
 time_new = [DATA EXPUNGED]
 time_ban = [DATA EXPUNGED]
