@@ -18,12 +18,15 @@
 
 import logging
 import pickle
+import re
 from configparser import RawConfigParser
 from os import mkdir
 from os.path import exists
 from shutil import rmtree
 from threading import Lock
 from typing import Dict, List, Set
+
+from .functions.etc import random_str
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -49,6 +52,22 @@ file_ids: Dict[str, Set[str]] = {
 lock_image: Lock = Lock()
 
 lock_text: Lock = Lock()
+
+names: dict = {
+    "ad": "广告用语",
+    "ava": "头像分析",
+    "bad": "敏感检测",
+    "ban": "自动封禁",
+    "bio": "简介封禁",
+    "con": "联系方式",
+    "del": "自动删除",
+    "eme": "应急模式",
+    "nm": "名称封禁",
+    "wb": "追踪封禁",
+    "wd": "追踪删除",
+    "sti": "贴纸删除",
+    "test": "测试用例"
+}
 
 receivers_status: List[str] = ["CAPTCHA", "LANG", "NOFLOOD", "NOPORN", "NOSPAM", "MANAGE", "RECHECK"]
 
@@ -201,10 +220,19 @@ user_ids: Dict[int, Dict[str, Set[int]]] = {}
 #     }
 # }
 
-# Init data variables
+# Init compiled variable
+
+compiled: dict = {}
+# pattern = "|".join(type_words)
+# compiled = {
+#     "type": re.compile(pattern, re.I | re.M | re.S)
+# }
+
+for word_type in names:
+    compiled[word_type] = re.compile(fr"预留{names[f'{word_type}']}词组 {random_str(16)}", re.I | re.M | re.S)
 
 # Load data
-file_list: List[str] = ["bad_ids", "except_ids", "user_ids"]
+file_list: List[str] = ["bad_ids", "compiled", "except_ids", "user_ids"]
 for file in file_list:
     try:
         try:

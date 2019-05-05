@@ -18,6 +18,7 @@
 
 import logging
 from time import time
+from typing import Union
 
 from pyrogram import Filters, Message
 
@@ -152,6 +153,14 @@ watch_delete = Filters.create(
 )
 
 
+def is_ban_text(text: str) -> bool:
+    if ((glovar.compiled["ad"].search(text) and glovar.compiled["con"].search(text))
+            or glovar.compiled["ban"].search(text)):
+        return False
+    else:
+        return True
+
+
 def is_restricted_channel(message: Message) -> bool:
     # Check if the message is forwarded form restricted channel
     try:
@@ -162,3 +171,9 @@ def is_restricted_channel(message: Message) -> bool:
         logger.warning(f"Is restricted channel error: {e}", exc_info=True)
 
     return False
+
+
+def is_watch_message(message: Message) -> Union[bool, str]:
+    return False
+
+
