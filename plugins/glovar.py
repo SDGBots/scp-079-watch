@@ -223,9 +223,8 @@ user_ids: Dict[int, Dict[str, Set[int]]] = {}
 # Init compiled variable
 
 compiled: dict = {}
-# pattern = "|".join(type_words)
 # compiled = {
-#     "type": re.compile(pattern, re.I | re.M | re.S)
+#     "test": re.compile("test text", re.I | re.M | re.S)
 # }
 
 for word_type in names:

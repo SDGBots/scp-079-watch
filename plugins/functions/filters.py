@@ -154,8 +154,8 @@ watch_delete = Filters.create(
 
 
 def is_ban_text(text: str) -> bool:
-    if ((glovar.compiled["ad"].search(text) and glovar.compiled["con"].search(text))
-            or glovar.compiled["ban"].search(text)):
+    if (glovar.compiled["ban"].search(text)
+            or (glovar.compiled["ad"].search(text) and glovar.compiled["con"].search(text))):
         return False
     else:
         return True
