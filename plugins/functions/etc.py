@@ -24,6 +24,7 @@ from threading import Thread, Timer
 from typing import Callable, List, Union
 
 from cryptography.fernet import Fernet
+from opencc import convert
 from pyrogram import Message, User
 
 # Enable logging
@@ -60,7 +61,7 @@ def code_block(text) -> str:
     return ""
 
 
-def crypt_str(operation: str, text: str, key: str) -> str:
+def crypt_str(operation: str, text: Union[int, str], key: str) -> str:
     f = Fernet(key)
     text = text.encode("utf-8")
     if operation == "decrypt":
@@ -112,6 +113,37 @@ def get_command_context(message: Message) -> str:
     return command_context
 
 
+def get_document_filename(message: Message) -> str:
+    text = ""
+    try:
+        if message.document:
+            if message.document.file_name:
+                text = message.document.file_name
+    except Exception as e:
+        logger.warning(f"Get document filename error: {e}", exc_info=True)
+
+    return text
+
+
+def get_forward_name(message: Message) -> str:
+    text = ""
+    try:
+        if message.forward_from:
+            user = message.forward_from
+            text = get_full_name(user)
+        elif message.forward_from_name:
+            text = message.forward_from_name
+        elif message.forward_from_chat:
+            chat = message.forward_from_chat
+            text = chat.title
+
+        return text
+    except Exception as e:
+        logger.warning(f"Get forward name error: {e}", exc_info=True)
+
+    return text
+
+
 def get_full_name(user: User) -> str:
     text = ""
     try:
@@ -127,19 +159,27 @@ def get_full_name(user: User) -> str:
 
 def get_text(message: Message) -> str:
     text = ""
-    if message.text:
-        text += message.text
-    elif message.caption:
-        text += message.caption
+    if message.text or message.caption:
+        if message.text:
+            text += message.text
+        else:
+            text += message.caption
 
-    if message.entities:
-        for en in message.entities:
-            if en.url:
-                text += f"\n{en.url}"
-    elif message.caption_entities:
-        for en in message.caption_entities:
-            if en.url:
-                text += f"\n{en.url}"
+        if message.entities or message.caption_entities:
+            if message.entities:
+                entities = message.entities
+            else:
+                entities = message.caption_entities
+
+            for en in entities:
+                if en.url:
+                    text += f"\n{en.url}"
+
+                if en.user:
+                    text += f"\n{get_full_name(en.user)}"
+
+    if text:
+        text = t2s(text)
 
     return text
 
@@ -166,6 +206,10 @@ def receive_data(message: Message) -> dict:
         logger.warning(f"Receive data error: {e}")
 
     return {}
+
+
+def t2s(text: str) -> str:
+    return convert(text, config="t2s.json")
 
 
 def thread(target: Callable, args: tuple) -> bool:

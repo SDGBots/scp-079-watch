@@ -20,9 +20,14 @@ import logging
 from time import time
 from typing import Union
 
-from pyrogram import Filters, Message
+from pyrogram import Client, Filters, Message
 
 from .. import glovar
+from .etc import get_document_filename, get_forward_name, get_text
+from .file import delete_file, get_downloaded_path
+from .ids import init_user_id
+from .image import get_color, get_ocr, get_qrcode
+from .telegram import get_preview
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -91,6 +96,18 @@ def is_hide_channel(_, message: Message) -> bool:
     return False
 
 
+def is_new_user(_, message: Message) -> bool:
+    try:
+        uid = message.from_user.id
+        for i in range(glovar.time_new):
+            if uid in glovar.new_user_ids[i]:
+                return True
+    except Exception as e:
+        logger.warning(f"Is new user error: {e}", exc_info=True)
+
+    return False
+
+
 def is_watch_ban(_, message: Message) -> bool:
     try:
         uid = message.from_user.id
@@ -142,6 +159,11 @@ hide_channel = Filters.create(
     func=is_hide_channel
 )
 
+new_user = Filters.create(
+    name="New User",
+    func=is_new_user
+)
+
 watch_ban = Filters.create(
     name="Watch Ban",
     func=is_watch_ban
@@ -154,11 +176,27 @@ watch_delete = Filters.create(
 
 
 def is_ban_text(text: str) -> bool:
-    if (glovar.compiled["ban"].search(text)
-            or (glovar.compiled["ad"].search(text) and glovar.compiled["con"].search(text))):
-        return False
-    else:
-        return True
+    try:
+        if (glovar.compiled["ban"].search(text)
+                or (glovar.compiled["ad"].search(text) and glovar.compiled["con"].search(text))):
+            return True
+    except Exception as e:
+        logger.warning(f"Is ban text error: {e}", exc_info=True)
+
+    return False
+
+
+def is_ban_name_text(text: str) -> bool:
+    try:
+        if (glovar.compiled["ban"].search(text)
+                or (glovar.compiled["ad"].search(text) and glovar.compiled["con"].search(text))
+                or glovar.compiled["nm"].search(text)
+                or glovar.compiled["bio"].search(text)):
+            return True
+    except Exception as e:
+        logger.warning(f"Is ban name text error: {e}", exc_info=True)
+
+    return False
 
 
 def is_restricted_channel(message: Message) -> bool:
@@ -173,7 +211,128 @@ def is_restricted_channel(message: Message) -> bool:
     return False
 
 
-def is_watch_message(message: Message) -> Union[bool, str]:
+def is_watch_message(client: Client, message: Message) -> Union[bool, str]:
+    need_delete = {}
+    try:
+        gid = message.chat.id
+        uid = message.from_user.id
+        init_user_id(uid)
+
+        # Start detect watch ban
+
+        # Check whether the user already recorded in this group
+        if gid in glovar.user_ids[uid]["ban"]:
+            return False
+
+        # Search the message's text
+        # Ensure that the text will not directly trigger the ban rule
+        message_text = get_text(message)
+        if message_text:
+            if is_ban_text(message_text):
+                return False
+
+            if glovar.compiled["wb"].search(message_text):
+                return "ban"
+
+        # Search name and text
+
+        # Search the forward name:
+        forward_name = get_forward_name(message)
+        if forward_name:
+            if is_ban_name_text(forward_name):
+                return False
+
+            if glovar.compiled["wb"].search(forward_name):
+                return "ban"
+
+        # Search the document filename:
+        file_name = get_document_filename(message)
+        if file_name:
+            if is_ban_text(file_name):
+                return False
+
+            if glovar.compiled["wb"].search(file_name):
+                return "ban"
+
+        # Search image
+
+        # Search preview
+        preview = get_preview(client, message)
+        if preview["text"]:
+            if is_ban_text(preview["text"]):
+                return False
+
+            if glovar.compiled["wb"].search(preview["text"]):
+                return "ban"
+
+        if preview["file_id"]:
+            preview["image_path"] = get_downloaded_path(client, preview["file_id"])
+            if preview["image_path"]:
+                need_delete["preview"] = preview["image_path"]
+                preview["ocr"] = get_ocr(preview["image_path"])
+                if preview["ocr"]:
+                    if is_ban_text(preview["ocr"]):
+                        return False
+
+                    if glovar.compiled["wb"].search(preview["ocr"]):
+                        return "ban"
+
+                preview["qrcode"] = get_qrcode(preview["image_path"])
+                if preview["qrcode"]:
+                    if is_ban_text(preview["qrcode"]):
+                        return False
+
+                    if glovar.compiled["wb"].search(preview["qrcode"]):
+                        return "ban"
+
+        # Start detect watch delete
+        # Check if the user is already in watch delete
+        if not is_watch_delete(None, message):
+            return False
+
+        if gid in glovar.user_ids[uid]["delete"]:
+            return False
+
+        # Some media type
+        if (message.animation
+                or message.audio
+                or message.document
+                or message.game
+                or message.location
+                or message.venue
+                or message.via_bot
+                or message.video
+                or message.video_note):
+            return "delete"
+
+        # Check the message's text
+        if message_text:
+            if glovar.compiled["wd"].search(message_text):
+                return "delete"
+
+        # Search preview
+        if preview["text"]:
+            if glovar.compiled["wd"].search(preview["text"]):
+                return "delete"
+
+        if preview["file_id"]:
+            if preview["image_path"]:
+                if preview["ocr"]:
+                    if glovar.compiled["wd"].search(preview["ocr"]):
+                        return "delete"
+
+                if preview["qrcode"]:
+                    if glovar.compiled["wd"].search(preview["qrcode"]):
+                        return "delete"
+
+                if get_color(preview["image_path"]):
+                    return "delete"
+
+        # Search image
+    except Exception as e:
+        logger.warning(f"Is watch message error: {e}", exc_info=True)
+    finally:
+        for file_type in need_delete:
+            delete_file(need_delete[file_type])
+
     return False
-
-

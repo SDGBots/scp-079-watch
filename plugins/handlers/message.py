@@ -18,23 +18,25 @@
 
 import logging
 from copy import deepcopy
-from time import time
 
 from pyrogram import Client, Filters
 
 from .. import glovar
-from ..functions.etc import receive_data
+from ..functions.etc import crypt_str, receive_data
 from ..functions.file import save
-from ..functions.filters import class_a, class_c, class_d, class_e
+from ..functions.filters import class_a, class_c, class_d, class_e, new_user, watch_ban, is_watch_message
+from ..functions.user import terminate_watch_user
 
 # Enable logging
 logger = logging.getLogger(__name__)
 
 
-@Client.on_message(Filters.incoming & Filters.group & ~class_a & ~class_c & ~class_d & ~class_e)
+@Client.on_message(Filters.incoming & Filters.group & ~class_a & ~class_c & ~class_d & ~class_e & ~watch_ban & new_user)
 def check(client, message):
     try:
-        gid = message.chat.id
+        watch_type = is_watch_message(message)
+        if watch_type:
+            terminate_watch_user(client, message, watch_type)
     except Exception as e:
         logger.warning(f"Check error: {e}", exc_info=True)
 
@@ -63,11 +65,11 @@ def process_data(_, message):
                             glovar.bad_ids["users"].add(the_id)
                             save("bad_ids")
                     elif action_type == "watch":
-                        now = int(time())
+                        until = int(crypt_str("decrypt", data["until"], glovar.key))
                         if the_type == "ban":
-                            glovar.watch_ids["ban"][the_id] = now
+                            glovar.watch_ids["ban"][the_id] = until
                         elif the_type == "delete":
-                            glovar.watch_ids["delete"][the_id] = now
+                            glovar.watch_ids["delete"][the_id] = until
 
             elif sender == "MANAGE":
 
@@ -124,11 +126,11 @@ def process_data(_, message):
                             glovar.bad_ids["users"].add(the_id)
                             save("bad_ids")
                     elif action_type == "watch":
-                        now = int(time())
+                        until = int(crypt_str("decrypt", data["until"], glovar.key))
                         if the_type == "ban":
-                            glovar.watch_ids["ban"][the_id] = now
+                            glovar.watch_ids["ban"][the_id] = until
                         elif the_type == "delete":
-                            glovar.watch_ids["delete"][the_id] = now
+                            glovar.watch_ids["delete"][the_id] = until
 
             elif sender == "NOPORN":
 
@@ -140,11 +142,11 @@ def process_data(_, message):
                             glovar.bad_ids["users"].add(the_id)
                             save("bad_ids")
                     elif action_type == "watch":
-                        now = int(time())
+                        until = int(crypt_str("decrypt", data["until"], glovar.key))
                         if the_type == "ban":
-                            glovar.watch_ids["ban"][the_id] = now
+                            glovar.watch_ids["ban"][the_id] = until
                         elif the_type == "delete":
-                            glovar.watch_ids["delete"][the_id] = now
+                            glovar.watch_ids["delete"][the_id] = until
 
             elif sender == "NOSPAM":
 
@@ -155,6 +157,12 @@ def process_data(_, message):
                         if the_type == "user":
                             glovar.bad_ids["users"].add(the_id)
                             save("bad_ids")
+                    elif action_type == "watch":
+                        until = int(crypt_str("decrypt", data["until"], glovar.key))
+                        if the_type == "ban":
+                            glovar.watch_ids["ban"][the_id] = until
+                        elif the_type == "delete":
+                            glovar.watch_ids["delete"][the_id] = until
 
             elif sender == "RECHECK":
 
@@ -166,11 +174,11 @@ def process_data(_, message):
                             glovar.bad_ids["users"].add(the_id)
                             save("bad_ids")
                     elif action_type == "watch":
-                        now = int(time())
+                        until = int(crypt_str("decrypt", data["until"], glovar.key))
                         if the_type == "ban":
-                            glovar.watch_ids["ban"][the_id] = now
+                            glovar.watch_ids["ban"][the_id] = until
                         elif the_type == "delete":
-                            glovar.watch_ids["delete"][the_id] = now
+                            glovar.watch_ids["delete"][the_id] = until
 
     except Exception as e:
         logger.warning(f"Process data error: {e}", exc_info=True)

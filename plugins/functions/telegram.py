@@ -17,11 +17,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from struct import pack
 from time import sleep
 from typing import List, Optional, Union
 
 from pyrogram import ChatMember, Client, InlineKeyboardMarkup, Message, ParseMode
+from pyrogram.api.functions.messages import GetWebPagePreview
+from pyrogram.api.types import FileLocation, MessageMediaPhoto, MessageMediaWebPage, Photo, PhotoSize, WebPage
+from pyrogram.client.ext.utils import encode
 from pyrogram.errors import ChannelInvalid, ChannelPrivate, FloodWait, PeerIdInvalid
+
+from .. import glovar
+from .etc import get_text
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -109,6 +116,91 @@ def get_admins(client: Client, cid: int) -> Optional[Union[bool, List[ChatMember
         logger.warning(f"Get admin ids in {cid} error: {e}", exc_info=True)
 
     return result
+
+
+def should_preview(message: Message) -> bool:
+    if message.entities or message.caption_entities:
+        if message.entities:
+            entities = message.entities
+        else:
+            entities = message.caption_entities
+
+        for en in entities:
+            if en.type in ["url", "text_link"]:
+                return True
+
+    return False
+
+
+def get_preview(client: Client, message: Message) -> dict:
+    preview = {
+        "text": "",
+        "file_id": ""
+    }
+    try:
+        if should_preview(message):
+            result = None
+            message_text = get_text(message)
+            flood_wait = True
+            while flood_wait:
+                flood_wait = False
+                try:
+                    result = client.send(GetWebPagePreview(message=message_text))
+                except FloodWait as e:
+                    flood_wait = True
+                    sleep(e.x + 1)
+
+            if result:
+                photo = None
+                if isinstance(result, MessageMediaWebPage):
+                    web_page = result.webpage
+                    if isinstance(web_page, WebPage):
+                        text = ""
+                        if web_page.display_url:
+                            text += web_page.display_url + "\n"
+
+                        if web_page.site_name:
+                            text += web_page.site_name + "\n"
+
+                        if web_page.title:
+                            text += web_page.title + "\n"
+
+                        if web_page.description:
+                            text += web_page.description + "\n"
+
+                        preview["text"] = text
+                        if web_page.photo:
+                            if isinstance(web_page.photo, Photo):
+                                photo = web_page.photo
+                elif isinstance(result, MessageMediaPhoto):
+                    media = result.photo
+                    if isinstance(media, Photo):
+                        photo = media
+
+                if photo:
+                    size = photo.sizes[-1]
+                    if isinstance(size, PhotoSize):
+                        file_size = size.size
+                        if file_size < glovar.image_size:
+                            loc = size.location
+                            if isinstance(loc, FileLocation):
+                                file_id = encode(
+                                    pack(
+                                        "<iiqqqqi",
+                                        2,
+                                        loc.dc_id,
+                                        photo.id,
+                                        photo.access_hash,
+                                        loc.volume_id,
+                                        loc.secret,
+                                        loc.local_id
+                                    )
+                                )
+                                preview["file_id"] = file_id
+    except Exception as e:
+        logger.warning(f"Get preview error: {e}", exc_info=True)
+
+    return preview
 
 
 def kick_chat_member(client: Client, cid: int, uid: int) -> Optional[Union[bool, Message]]:

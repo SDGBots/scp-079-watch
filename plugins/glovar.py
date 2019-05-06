@@ -109,6 +109,7 @@ hide_channel_id: int = 0
 watch_channel_id: int = 0
 
 # [custom]
+image_size: int = 0
 limit_ban: int = 0
 limit_delete: int = 0
 reset_day: str = ""
@@ -141,6 +142,7 @@ try:
     hide_channel_id = int(config["channels"].get("hide_channel_id", hide_channel_id))
     watch_channel_id = int(config["channels"].get("watch_channel_id", watch_channel_id))
     # [custom]
+    image_size = int(config["custom"].get("image_size", image_size))
     limit_ban = int(config["custom"].get("limit_ban", limit_ban))
     limit_delete = int(config["custom"].get("limit_delete", limit_delete))
     reset_day = config["custom"].get("reset_day", reset_day)
@@ -167,6 +169,7 @@ if (prefix == []
         or warn_id == 0
         or hide_channel_id == 0
         or watch_channel_id == 0
+        or image_size == 0
         or limit_ban == 0
         or limit_delete == 0
         or reset_day in {"", "[DATA EXPUNGED]"}
@@ -212,6 +215,15 @@ except_ids: Dict[str, Set[int]] = {
 #     "users": {12345678}
 # }
 
+new_user_ids: Dict[int, Set[int]] = {}
+# new_user_ids = {
+#     0: {12345678},
+#     1: {12345679}
+# }
+
+for i in range(time_new):
+    new_user_ids[i] = set()
+
 user_ids: Dict[int, Dict[str, Set[int]]] = {}
 # user_ids = {
 #     12345678: {
@@ -230,24 +242,39 @@ compiled: dict = {}
 for word_type in names:
     compiled[word_type] = re.compile(fr"预留{names[f'{word_type}']}词组 {random_str(16)}", re.I | re.M | re.S)
 
+# Init time data
+
+time_now: int = 0
+
 # Load data
-file_list: List[str] = ["bad_ids", "compiled", "except_ids", "user_ids"]
+file_list: List[str] = ["bad_ids", "compiled", "except_ids", "new_user_ids", "time_now", "user_ids"]
 for file in file_list:
     try:
         try:
             if exists(f"data/{file}") or exists(f"data/.{file}"):
-                with open(f"data/{file}", 'rb') as f:
+                with open(f"data/{file}", "rb") as f:
                     locals()[f"{file}"] = pickle.load(f)
             else:
-                with open(f"data/{file}", 'wb') as f:
+                with open(f"data/{file}", "wb") as f:
                     pickle.dump(eval(f"{file}"), f)
         except Exception as e:
             logger.error(f"Load data {file} error: {e}")
-            with open(f"data/.{file}", 'rb') as f:
+            with open(f"data/.{file}", "rb") as f:
                 locals()[f"{file}"] = pickle.load(f)
     except Exception as e:
         logger.critical(f"Load data {file} backup error: {e}")
         raise SystemExit("[DATA CORRUPTION]")
+
+if time_now > time_new:
+    time_now = 0
+    with open("data/time_now", "wb") as f:
+        pickle.dump(eval("time_now"), f)
+
+if len(new_user_ids) > time_new:
+    for i in range(time_new, len(new_user_ids)):
+        new_user_ids.pop(i, set())
+        with open("data/new_user_ids", "wb") as f:
+            pickle.dump(eval("new_user_ids"), f)
 
 # Start program
 copyright_text = (f"SCP-079-WATCH v{version}, Copyright (C) 2019 SCP-079 <https://scp-079.org>\n"

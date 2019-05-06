@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from time import sleep, time
+from time import sleep
 from typing import List, Optional, Union
 
 from pyrogram import Client, Message
@@ -94,15 +94,9 @@ def share_data(client: Client, receivers: List[str], action: str, action_type: s
     return False
 
 
-def share_watch_user(client: Client, uid: int, watch_type: str) -> bool:
+def share_watch_user(client: Client, watch_type: str,  uid: int, until: str) -> bool:
     # Share a watch user with other bots
     try:
-        now = time()
-        if watch_type == "ban":
-            until = now + glovar.time_ban
-        else:
-            until = now + glovar.time_delete
-
         share_data(
             client=client,
             receivers=glovar.receivers_status,
