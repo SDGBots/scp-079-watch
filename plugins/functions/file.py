@@ -18,6 +18,7 @@
 
 
 import logging
+from os import remove
 from os.path import exists
 from pickle import dump
 from shutil import copyfile
@@ -47,6 +48,18 @@ def crypt_file(operation: str, file_in: str, file_out: str) -> bool:
         return True
     except Exception as e:
         logger.warning(f"Crypt file error: {e}", exc_info=True)
+
+    return False
+
+
+def delete_file(path: str) -> bool:
+    # Delete a file
+    try:
+        if exists(path):
+            remove(path)
+            return True
+    except Exception as e:
+        logger.warning(f"Delete file error: {e}", exc_info=True)
 
     return False
 

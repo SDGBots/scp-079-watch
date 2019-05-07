@@ -86,6 +86,7 @@ def is_class_e(_, message: Message) -> bool:
 
 
 def is_hide_channel(_, message: Message) -> bool:
+    # This message is sent from hide channel
     try:
         cid = message.chat.id
         if cid == glovar.hide_channel_id:
@@ -97,6 +98,7 @@ def is_hide_channel(_, message: Message) -> bool:
 
 
 def is_new_user(_, message: Message) -> bool:
+    # This message is sent from a new joined member in last glovar.time_new hours
     try:
         uid = message.from_user.id
         for i in range(glovar.time_new):
