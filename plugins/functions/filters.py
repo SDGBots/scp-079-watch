@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 def is_class_a(_, message: Message) -> bool:
+    # Check if the user who sent the message is Class A personnel
     try:
         cid = message.chat.id
         if cid == glovar.o5_1_id:
@@ -45,6 +46,7 @@ def is_class_a(_, message: Message) -> bool:
 
 
 def is_class_c(_, message: Message) -> bool:
+    # Check if the user who sent the message is Class C personnel
     try:
         uid = message.from_user.id
         if uid in glovar.bot_ids or message.from_user.is_self:
@@ -56,6 +58,7 @@ def is_class_c(_, message: Message) -> bool:
 
 
 def is_class_d(_, message: Message) -> bool:
+    # Check if the user who sent the message is Class D personnel
     try:
         uid = message.from_user.id
         if uid in glovar.bad_ids["users"]:
@@ -70,6 +73,7 @@ def is_class_d(_, message: Message) -> bool:
 
 
 def is_class_e(_, message: Message) -> bool:
+    # Check if the user who sent the message is Class E personnel
     try:
         uid = message.from_user.id
         if uid in glovar.except_ids["users"]:
@@ -86,7 +90,7 @@ def is_class_e(_, message: Message) -> bool:
 
 
 def is_hide_channel(_, message: Message) -> bool:
-    # This message is sent from hide channel
+    # Check if the message is sent from hide channel
     try:
         cid = message.chat.id
         if cid == glovar.hide_channel_id:
@@ -98,7 +102,7 @@ def is_hide_channel(_, message: Message) -> bool:
 
 
 def is_new_user(_, message: Message) -> bool:
-    # This message is sent from a new joined member in last glovar.time_new hours
+    # Check if the message is sent from a new joined member in last glovar.time_new hours
     try:
         uid = message.from_user.id
         for i in range(glovar.time_new):
@@ -111,6 +115,7 @@ def is_new_user(_, message: Message) -> bool:
 
 
 def is_watch_ban(_, message: Message) -> bool:
+    # Check if the message is sent by a watch ban user
     try:
         uid = message.from_user.id
         status = glovar.watch_ids["ban"].get(uid, 0)
@@ -124,6 +129,7 @@ def is_watch_ban(_, message: Message) -> bool:
 
 
 def is_watch_delete(_, message: Message) -> bool:
+    # Check if the message is sent by a watch delete user
     try:
         uid = message.from_user.id
         status = glovar.watch_ids["delete"].get(uid, 0)
@@ -178,6 +184,7 @@ watch_delete = Filters.create(
 
 
 def is_ban_text(text: str) -> bool:
+    # Check if the text will be banned
     try:
         if (glovar.compiled["ban"].search(text)
                 or (glovar.compiled["ad"].search(text) and glovar.compiled["con"].search(text))):
@@ -189,6 +196,7 @@ def is_ban_text(text: str) -> bool:
 
 
 def is_ban_name_text(text: str) -> bool:
+    # Check if the name will be banned
     try:
         if (glovar.compiled["ban"].search(text)
                 or (glovar.compiled["ad"].search(text) and glovar.compiled["con"].search(text))
@@ -214,6 +222,7 @@ def is_restricted_channel(message: Message) -> bool:
 
 
 def is_watch_message(client: Client, message: Message) -> Union[bool, str]:
+    # Check if the message should be watched
     need_delete = {}
     try:
         gid = message.chat.id
