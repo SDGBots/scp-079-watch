@@ -101,6 +101,7 @@ lang_id: int = 0
 noflood_id: int = 0
 noporn_id: int = 0
 nospam_id: int = 0
+tip_id: int = 0
 user_id: int = 0
 warn_id: int = 0
 
@@ -136,6 +137,7 @@ try:
     noflood_id = int(config["bots"].get("noflood_id", noflood_id))
     noporn_id = int(config["bots"].get("noporn_id", noporn_id))
     nospam_id = int(config["bots"].get("nospam_id", nospam_id))
+    tip_id = int(config["bots"].get("tip_id", tip_id))
     user_id = int(config["bots"].get("user_id", user_id))
     warn_id = int(config["bots"].get("warn_id", warn_id))
     # [channels]
@@ -165,6 +167,7 @@ if (prefix == []
         or noflood_id == 0
         or noporn_id == 0
         or nospam_id == 0
+        or tip_id == 0
         or user_id == 0
         or warn_id == 0
         or hide_channel_id == 0
