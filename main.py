@@ -38,9 +38,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Start
-app = Client(
-    session_name="account"
-)
+app = Client(session_name="account")
 app.start()
 
 # Timer
