@@ -69,7 +69,7 @@ names: dict = {
     "test": "测试用例"
 }
 
-receivers_status: List[str] = ["CAPTCHA", "LANG", "NOFLOOD", "NOPORN", "NOSPAM", "MANAGE", "RECHECK"]
+receivers_status: List[str] = ["CAPTCHA", "CLEAN", "LANG", "NOFLOOD", "NOPORN", "NOSPAM", "MANAGE", "RECHECK"]
 
 sender = "WATCH"
 
