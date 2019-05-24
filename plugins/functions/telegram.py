@@ -134,8 +134,8 @@ def should_preview(message: Message) -> bool:
 
 def get_preview(client: Client, message: Message) -> dict:
     preview = {
-        "text": "",
-        "file_id": ""
+        "text": None,
+        "file_id": None
     }
     try:
         if should_preview(message):
