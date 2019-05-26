@@ -29,15 +29,15 @@ from ..functions.telegram import send_message
 logger = logging.getLogger(__name__)
 
 
-@Client.on_message(Filters.incoming & Filters.group & class_a
+@Client.on_message(Filters.incoming & Filters.private & class_a
                    & Filters.command(["version"], glovar.prefix))
 def version(client, message):
     try:
         cid = message.chat.id
         aid = message.from_user.id
         mid = message.message_id
-        text = (f"版本：{bold(glovar.version)}\n"
-                f"管理员：{user_mention(aid)}\n")
+        text = (f"管理员：{user_mention(aid)}\n\n"
+                f"版本：{bold(glovar.version)}\n")
         thread(send_message, (client, cid, text, mid))
     except Exception as e:
         logger.warning(f"Version error: {e}", exc_info=True)

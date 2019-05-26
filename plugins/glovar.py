@@ -73,7 +73,7 @@ receivers_status: List[str] = ["CAPTCHA", "CLEAN", "LANG", "NOFLOOD", "NOPORN", 
 
 sender = "WATCH"
 
-version: str = "0.0.1"
+version: str = "0.0.3"
 
 watch_ids: Dict[str, Dict[int, int]] = {
     "ban": {},

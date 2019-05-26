@@ -39,40 +39,43 @@ def get_image_status(message: Message) -> dict:
         "ocr": False,
         "qrcode": False
     }
-    if ((message.animation and message.animation.thumb)
-            or (message.audio and message.audio.thumb)
-            or (message.document and message.document.thumb)
-            or message.photo
-            or message.sticker
-            or (message.video and message.video.thumb)
-            or (message.video_note and message.video_note.thumb)):
-        if message.animation:
-            image["file_id"] = message.animation.thumb.file_id
-        elif message.audio:
-            image["file_id"] = message.audio.thumb.file_id
-        elif message.document:
-            if (message.document.mime_type
-                    and "image" in message.document.mime_type
-                    and "gif" not in message.document.mime_type
-                    and message.document.file_size
-                    and message.document.file_size <= glovar.image_size):
-                image["file_id"] = message.document.file_id
+    try:
+        if ((message.animation and message.animation.thumb)
+                or (message.audio and message.audio.thumb)
+                or (message.document and message.document.thumb)
+                or message.photo
+                or message.sticker
+                or (message.video and message.video.thumb)
+                or (message.video_note and message.video_note.thumb)):
+            if message.animation:
+                image["file_id"] = message.animation.thumb.file_id
+            elif message.audio:
+                image["file_id"] = message.audio.thumb.file_id
+            elif message.document:
+                if (message.document.mime_type
+                        and "image" in message.document.mime_type
+                        and "gif" not in message.document.mime_type
+                        and message.document.file_size
+                        and message.document.file_size <= glovar.image_size):
+                    image["file_id"] = message.document.file_id
+                    image["ocr"] = True
+                    image["qrcode"] = True
+                else:
+                    image["file_id"] = message.document.thumb.file_id
+            elif message.photo:
+                image["file_id"] = message.photo.sizes[-1].file_id
                 image["ocr"] = True
                 image["qrcode"] = True
-            else:
-                image["file_id"] = message.document.thumb.file_id
-        elif message.photo:
-            image["file_id"] = message.photo.sizes[-1].file_id
-            image["ocr"] = True
-            image["qrcode"] = True
-        elif message.sticker:
-            image["file_id"] = message.sticker.file_id
-            image["ocr"] = True
-            image["qrcode"] = True
-        elif message.video:
-            image["file_id"] = message.video.thumb.file_id
-        elif message.video_note:
-            image["file_id"] = message.video_note.thumb.file_id
+            elif message.sticker:
+                image["file_id"] = message.sticker.file_id
+                image["ocr"] = True
+                image["qrcode"] = True
+            elif message.video:
+                image["file_id"] = message.video.thumb.file_id
+            elif message.video_note:
+                image["file_id"] = message.video_note.thumb.file_id
+    except Exception as e:
+        logger.warning(f"Get image status error: {e}", exc_info=True)
 
     return image
 

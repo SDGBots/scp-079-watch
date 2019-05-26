@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 @Client.on_message(Filters.incoming & Filters.group & ~class_a & ~class_c & ~class_d & ~class_e & ~watch_ban & new_user)
 def check(client, message):
     try:
-        watch_type = is_watch_message(message)
+        watch_type = is_watch_message(client, message)
         if watch_type:
             terminate_watch_user(client, message, watch_type)
     except Exception as e:
@@ -45,140 +45,140 @@ def check(client, message):
 def process_data(_, message):
     try:
         data = receive_data(message)
-        sender = data["from"]
-        receivers = data["to"]
-        action = data["action"]
-        action_type = data["type"]
-        data = data["data"]
-        # This will look awkward,
-        # seems like it can be simplified,
-        # but this is to ensure that the permissions are clear,
-        # so it is intentionally written like this
-        if glovar.sender in receivers:
-            if sender == "LANG":
+        if data:
+            sender = data["from"]
+            receivers = data["to"]
+            action = data["action"]
+            action_type = data["type"]
+            data = data["data"]
+            # This will look awkward,
+            # seems like it can be simplified,
+            # but this is to ensure that the permissions are clear,
+            # so it is intentionally written like this
+            if glovar.sender in receivers:
+                if sender == "LANG":
 
-                if action == "add":
-                    the_id = data["id"]
-                    the_type = data["type"]
-                    if action_type == "bad":
-                        if the_type == "user":
-                            glovar.bad_ids["users"].add(the_id)
+                    if action == "add":
+                        the_id = data["id"]
+                        the_type = data["type"]
+                        if action_type == "bad":
+                            if the_type == "user":
+                                glovar.bad_ids["users"].add(the_id)
+                                save("bad_ids")
+                        elif action_type == "watch":
+                            until = int(crypt_str("decrypt", data["until"], glovar.key))
+                            if the_type == "ban":
+                                glovar.watch_ids["ban"][the_id] = until
+                            elif the_type == "delete":
+                                glovar.watch_ids["delete"][the_id] = until
+
+                elif sender == "MANAGE":
+
+                    if action == "add":
+                        the_id = data["id"]
+                        the_type = data["type"]
+                        if action_type == "bad":
+                            if the_type == "channel":
+                                glovar.bad_ids["channels"].add(the_id)
+                                save("bad_ids")
+                        elif action_type == "except":
+                            if the_type == "channel":
+                                glovar.except_ids["channels"].add(the_id)
+                            elif the_type == "user":
+                                glovar.except_ids["users"].add(the_id)
+
+                            save("except_ids")
+
+                    elif action == "remove":
+                        the_id = data["id"]
+                        the_type = data["type"]
+                        if action_type == "bad":
+                            if the_type == "channel":
+                                glovar.bad_ids["channels"].discard(the_id)
+                            elif the_type == "user":
+                                glovar.bad_ids["users"].discard(the_id)
+                                glovar.watch_ids["ban"].pop(the_id, {})
+                                glovar.watch_ids["delete"].pop(the_id, {})
+                                if glovar.user_ids.get(the_id):
+                                    glovar.user_ids[the_id] = deepcopy(glovar.default_user_status)
+
+                                save("user_ids")
+
                             save("bad_ids")
-                    elif action_type == "watch":
-                        until = int(crypt_str("decrypt", data["until"], glovar.key))
-                        if the_type == "ban":
-                            glovar.watch_ids["ban"][the_id] = until
-                        elif the_type == "delete":
-                            glovar.watch_ids["delete"][the_id] = until
+                        elif action_type == "except":
+                            if the_type == "channel":
+                                glovar.except_ids["channels"].discard(the_id)
+                            elif the_type == "user":
+                                glovar.except_ids["users"].discard(the_id)
 
-            elif sender == "MANAGE":
+                            save("except_ids")
+                        elif action_type == "watch":
+                            if the_type == "all":
+                                glovar.watch_ids["ban"].pop(the_id, 0)
+                                glovar.watch_ids["delete"].pop(the_id, 0)
 
-                if action == "add":
-                    the_id = data["id"]
-                    the_type = data["type"]
-                    if action_type == "bad":
-                        if the_type == "channel":
-                            glovar.bad_ids["channels"].add(the_id)
-                            save("bad_ids")
-                    elif action_type == "except":
-                        if the_type == "channel":
-                            glovar.except_ids["channels"].add(the_id)
-                        elif the_type == "user":
-                            glovar.except_ids["users"].add(the_id)
+                elif sender == "NOFLOOD":
 
-                        save("except_ids")
+                    if action == "add":
+                        the_id = data["id"]
+                        the_type = data["type"]
+                        if action_type == "bad":
+                            if the_type == "user":
+                                glovar.bad_ids["users"].add(the_id)
+                                save("bad_ids")
+                        elif action_type == "watch":
+                            until = int(crypt_str("decrypt", data["until"], glovar.key))
+                            if the_type == "ban":
+                                glovar.watch_ids["ban"][the_id] = until
+                            elif the_type == "delete":
+                                glovar.watch_ids["delete"][the_id] = until
 
-                elif action == "remove":
-                    the_id = data["id"]
-                    the_type = data["type"]
-                    if action_type == "bad":
-                        if the_type == "channel":
-                            glovar.bad_ids["channels"].discard(the_id)
-                        elif the_type == "user":
-                            glovar.bad_ids["users"].discard(the_id)
-                            glovar.watch_ids["ban"].pop(the_id, {})
-                            glovar.watch_ids["delete"].pop(the_id, {})
-                            if glovar.user_ids.get(the_id):
-                                glovar.user_ids[the_id] = deepcopy(glovar.default_user_status)
+                elif sender == "NOPORN":
 
-                            save("user_ids")
+                    if action == "add":
+                        the_id = data["id"]
+                        the_type = data["type"]
+                        if action_type == "bad":
+                            if the_type == "user":
+                                glovar.bad_ids["users"].add(the_id)
+                                save("bad_ids")
+                        elif action_type == "watch":
+                            until = int(crypt_str("decrypt", data["until"], glovar.key))
+                            if the_type == "ban":
+                                glovar.watch_ids["ban"][the_id] = until
+                            elif the_type == "delete":
+                                glovar.watch_ids["delete"][the_id] = until
 
-                        save("bad_ids")
-                    elif action_type == "except":
-                        if the_type == "channel":
-                            glovar.except_ids["channels"].discard(the_id)
-                        elif the_type == "user":
-                            glovar.except_ids["users"].discard(the_id)
+                elif sender == "NOSPAM":
 
-                        save("except_ids")
-                    elif action_type == "watch":
-                        if the_type == "all":
-                            glovar.watch_ids["ban"].pop(the_id, 0)
-                            glovar.watch_ids["delete"].pop(the_id, 0)
+                    if action == "add":
+                        the_id = data["id"]
+                        the_type = data["type"]
+                        if action_type == "bad":
+                            if the_type == "user":
+                                glovar.bad_ids["users"].add(the_id)
+                                save("bad_ids")
+                        elif action_type == "watch":
+                            until = int(crypt_str("decrypt", data["until"], glovar.key))
+                            if the_type == "ban":
+                                glovar.watch_ids["ban"][the_id] = until
+                            elif the_type == "delete":
+                                glovar.watch_ids["delete"][the_id] = until
 
-            elif sender == "NOFLOOD":
+                elif sender == "RECHECK":
 
-                if action == "add":
-                    the_id = data["id"]
-                    the_type = data["type"]
-                    if action_type == "bad":
-                        if the_type == "user":
-                            glovar.bad_ids["users"].add(the_id)
-                            save("bad_ids")
-                    elif action_type == "watch":
-                        until = int(crypt_str("decrypt", data["until"], glovar.key))
-                        if the_type == "ban":
-                            glovar.watch_ids["ban"][the_id] = until
-                        elif the_type == "delete":
-                            glovar.watch_ids["delete"][the_id] = until
-
-            elif sender == "NOPORN":
-
-                if action == "add":
-                    the_id = data["id"]
-                    the_type = data["type"]
-                    if action_type == "bad":
-                        if the_type == "user":
-                            glovar.bad_ids["users"].add(the_id)
-                            save("bad_ids")
-                    elif action_type == "watch":
-                        until = int(crypt_str("decrypt", data["until"], glovar.key))
-                        if the_type == "ban":
-                            glovar.watch_ids["ban"][the_id] = until
-                        elif the_type == "delete":
-                            glovar.watch_ids["delete"][the_id] = until
-
-            elif sender == "NOSPAM":
-
-                if action == "add":
-                    the_id = data["id"]
-                    the_type = data["type"]
-                    if action_type == "bad":
-                        if the_type == "user":
-                            glovar.bad_ids["users"].add(the_id)
-                            save("bad_ids")
-                    elif action_type == "watch":
-                        until = int(crypt_str("decrypt", data["until"], glovar.key))
-                        if the_type == "ban":
-                            glovar.watch_ids["ban"][the_id] = until
-                        elif the_type == "delete":
-                            glovar.watch_ids["delete"][the_id] = until
-
-            elif sender == "RECHECK":
-
-                if action == "add":
-                    the_id = data["id"]
-                    the_type = data["type"]
-                    if action_type == "bad":
-                        if the_type == "user":
-                            glovar.bad_ids["users"].add(the_id)
-                            save("bad_ids")
-                    elif action_type == "watch":
-                        until = int(crypt_str("decrypt", data["until"], glovar.key))
-                        if the_type == "ban":
-                            glovar.watch_ids["ban"][the_id] = until
-                        elif the_type == "delete":
-                            glovar.watch_ids["delete"][the_id] = until
-
+                    if action == "add":
+                        the_id = data["id"]
+                        the_type = data["type"]
+                        if action_type == "bad":
+                            if the_type == "user":
+                                glovar.bad_ids["users"].add(the_id)
+                                save("bad_ids")
+                        elif action_type == "watch":
+                            until = int(crypt_str("decrypt", data["until"], glovar.key))
+                            if the_type == "ban":
+                                glovar.watch_ids["ban"][the_id] = until
+                            elif the_type == "delete":
+                                glovar.watch_ids["delete"][the_id] = until
     except Exception as e:
         logger.warning(f"Process data error: {e}", exc_info=True)

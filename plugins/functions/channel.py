@@ -28,7 +28,6 @@ from .etc import code, format_data, thread
 from .file import crypt_file
 from .telegram import send_document, send_message
 
-
 # Enable logging
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,12 @@ def forward_evidence(client: Client, message: Message, level: str) -> Optional[U
     # Forward the message to logging channel as evidence
     result = None
     try:
+        if not message or not message.from_user:
+            return result
+
         uid = message.from_user.id
+        text = (f"用户 ID：{code(uid)}\n"
+                f"操作等级：{code(level)}\n")
         flood_wait = True
         while flood_wait:
             flood_wait = False
@@ -51,9 +55,8 @@ def forward_evidence(client: Client, message: Message, level: str) -> Optional[U
                 return False
 
         result = result.message_id
-        text = (f"用户 ID：{code(uid)}\n"
-                f"操作等级：{code(level)}\n")
-        thread(send_message, (client, glovar.watch_channel_id, text, result))
+        result = send_message(client, glovar.watch_channel_id, text, result)
+        result = result.message_id
     except Exception as e:
         logger.warning(f"Forward evidence error: {e}", exc_info=True)
 
