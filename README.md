@@ -12,27 +12,28 @@ See [this article](https://scp-079.org/watch/).
 
 ## Requirements
 
-- Python 3.6 or higher.
-- `requirements.txt` : APScheduler OpenCC Pillow pyAesCrypt pyrogram[fast]
-- Ubuntu: `sudo apt update && sudo apt install caffe-cpu`
+- Python 3.6 or higher
+- Ubuntu: `sudo apt update && sudo apt install libzbar0 opencc -y`
+- pip: `pip install -r requirements.txt` or `pip install -U APScheduler OpenCC Pillow pyAesCrypt pyrogram[fast] pytesseract pyzbar`
 
 ## Files
 
 - plugins
     - functions
-        - `channel.py` : Send messages to channel
+        - `channel.py` : Functions about channel
         - `etc.py` : Miscellaneous
         - `file.py` : Save files
         - `filters.py` : Some filters
         - `group.py` : Functions about group
         - `ids.py` : Modify id lists
         - `image.py` : Functions about image
+        - `receive.py` : Receive data from exchange channel
         - `telegram.py` : Some telegram functions
+        - `tests.py` : Some test functions
         - `timers.py` : Timer functions
-        - `user.py` : Functions about user
+        - `user.py` : Functions about user and channel object
     - handlers
-        - `callback.py` : Handle callbacks
-        - `command` : Handle commands
+        - `command.py` : Handle commands
         - `message.py`: Handle messages
     - `glovar.py` : Global variables
 - `.gitignore` : Ignore
@@ -41,6 +42,7 @@ See [this article](https://scp-079.org/watch/).
 - `main.py` : Start here
 - `README.md` : This file
 - `requirements.txt` : Managed by pip
+
 
 ## Contribute
 
