@@ -17,52 +17,53 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from json import dumps, loads
+from hashlib import md5
+from html import escape
 from random import choice, uniform
 from string import ascii_letters, digits
 from threading import Thread, Timer
-from time import sleep
-from typing import Callable, List, Union
+from time import sleep, time
+from typing import Any, Callable, List, Union
 
 from cryptography.fernet import Fernet
 from opencc import convert
-from pyrogram import Message, User
+from pyrogram import InlineKeyboardMarkup, Message, MessageEntity, User
 from pyrogram.errors import FloodWait
 
 # Enable logging
 logger = logging.getLogger(__name__)
 
 
-def bold(text) -> str:
+def bold(text: Any) -> str:
     # Get a bold text
     try:
         text = str(text)
         if text.strip():
-            return f"**{text}**"
+            return f"<b>{escape(str(text))}</b>"
     except Exception as e:
         logger.warning(f"Bold error: {e}", exc_info=True)
 
     return ""
 
 
-def code(text) -> str:
+def code(text: Any) -> str:
     # Get a code text
     try:
         text = str(text)
         if text.strip():
-            return f"`{text}`"
+            return f"<code>{escape(str(text))}</code>"
     except Exception as e:
         logger.warning(f"Code error: {e}", exc_info=True)
 
     return ""
 
 
-def code_block(text) -> str:
+def code_block(text: Any) -> str:
     # Get a code block text
     try:
         text = str(text)
         if text.strip():
-            return f"```{text}```"
+            return f"<pre>{escape(str(text))}</pre>"
     except Exception as e:
         logger.warning(f"Code block error: {e}", exc_info=True)
 
@@ -93,6 +94,7 @@ def delay(secs: int, target: Callable, args: list) -> bool:
         t = Timer(secs, target, args)
         t.daemon = True
         t.start()
+
         return True
     except Exception as e:
         logger.warning(f"Delay error: {e}", exc_info=True)
@@ -100,33 +102,34 @@ def delay(secs: int, target: Callable, args: list) -> bool:
     return False
 
 
-def format_data(sender: str, receivers: List[str], action: str, action_type: str, data=None) -> str:
-    # See https://scp-079.org/exchange/
-    text = ""
-    try:
-        data = {
-            "from": sender,
-            "to": receivers,
-            "action": action,
-            "type": action_type,
-            "data": data
-        }
-        text = code_block(dumps(data, indent=4))
-    except Exception as e:
-        logger.warning(f"Format data error: {e}", exc_info=True)
-
-    return text
-
-
 def general_link(text: Union[int, str], link: str) -> str:
     # Get a general markdown link
     result = ""
     try:
-        result = f"[{text}]({link})"
+        result = f'<a href="{link}">{escape(str(text))}</a>'
     except Exception as e:
         logger.warning(f"General link error: {e}", exc_info=True)
 
     return result
+
+
+def get_channel_link(message: Union[int, Message]) -> str:
+    # Get a channel reference link
+    text = ""
+    try:
+        text = "https://t.me/"
+        if isinstance(message, int):
+            text += f"c/{str(message)[4:]}"
+        else:
+            if message.chat.username:
+                text += f"{message.chat.username}"
+            else:
+                cid = message.chat.id
+                text += f"c/{str(cid)[4:]}"
+    except Exception as e:
+        logger.warning(f"Get channel link error: {e}", exc_info=True)
+
+    return text
 
 
 def get_document_filename(message: Message) -> str:
@@ -143,6 +146,22 @@ def get_document_filename(message: Message) -> str:
         logger.warning(f"Get document filename error: {e}", exc_info=True)
 
     return text
+
+
+def get_entity_text(message: Message, entity: MessageEntity) -> str:
+    # Get a message's entity text
+    result = ""
+    try:
+        text = get_text(message)
+        if text and entity:
+            offset = entity.offset
+            length = entity.length
+            text = text.encode("utf-16-le")
+            result = text[offset * 2:(offset + length) * 2].decode("utf-16-le")
+    except Exception as e:
+        logger.warning(f"Get entity text error: {e}", exc_info=True)
+
+    return result
 
 
 def get_forward_name(message: Message) -> str:
@@ -183,6 +202,86 @@ def get_full_name(user: User) -> str:
     return text
 
 
+def get_links(message: Message) -> List[str]:
+    # Get a message's links
+    result = []
+    try:
+        if message.entities:
+            for en in message.entities:
+                link = ""
+                if en.type == "url":
+                    link = get_entity_text(message, en)
+                elif en.url:
+                    link = en.url
+
+                link = get_stripped_link(link)
+                if link:
+                    result.append(link)
+
+        if message.reply_markup and isinstance(message.reply_markup, InlineKeyboardMarkup):
+            reply_markup = message.reply_markup
+            if reply_markup.inline_keyboard:
+                inline_keyboard = reply_markup.inline_keyboard
+                if inline_keyboard:
+                    for button_row in inline_keyboard:
+                        for button in button_row:
+                            if button:
+                                if button.url:
+                                    url = get_stripped_link(button.url)
+                                    if url:
+                                        result.append(get_stripped_link(url))
+    except Exception as e:
+        logger.warning(f"Get links error: {e}", exc_info=True)
+
+    return result
+
+
+def get_md5sum(the_type: str, ctx: str) -> str:
+    # Get the md5sum of a string or file
+    result = ""
+    try:
+        if ctx:
+            if the_type == "file":
+                hash_md5 = md5()
+                with open(ctx, "rb") as f:
+                    for chunk in iter(lambda: f.read(4096), b""):
+                        hash_md5.update(chunk)
+
+                result = hash_md5.hexdigest()
+            elif the_type == "string":
+                result = md5(ctx.encode()).hexdigest()
+    except Exception as e:
+        logger.warning(f"Get md5sum error: {e}", exc_info=True)
+
+    return result
+
+
+def get_now() -> int:
+    # Get time for now
+    result = 0
+    try:
+        result = int(time())
+    except Exception as e:
+        logger.warning(f"Get now error: {e}", exc_info=True)
+
+    return result
+
+
+def get_stripped_link(link: str) -> str:
+    # Get stripped link
+    result = ""
+    try:
+        if link:
+            result = link.replace("http://", "")
+            result = result.replace("https://", "")
+            if result and result[-1] == "/":
+                result = result[:-1]
+    except Exception as e:
+        logger.warning(f"Get stripped link error: {e}", exc_info=True)
+
+    return result
+
+
 def get_text(message: Message) -> str:
     # Get message's text, including link and mentioned user's name
     text = ""
@@ -206,6 +305,20 @@ def get_text(message: Message) -> str:
                     if en.user:
                         text += f"\n{get_full_name(en.user)}"
 
+        if message.reply_markup and isinstance(message.reply_markup, InlineKeyboardMarkup):
+            reply_markup = message.reply_markup
+            if reply_markup.inline_keyboard:
+                inline_keyboard = reply_markup.inline_keyboard
+                if inline_keyboard:
+                    for button_row in inline_keyboard:
+                        for button in button_row:
+                            if button:
+                                if button.text:
+                                    text += f"\n{button.text}"
+
+                                if button.url:
+                                    text += f"\n{button.url}"
+
         if text:
             text = t2s(text)
     except Exception as e:
@@ -214,11 +327,12 @@ def get_text(message: Message) -> str:
     return text
 
 
-def message_link(cid: int, mid: int) -> str:
+def message_link(message: Message) -> str:
     # Get a message link in a channel
     text = ""
     try:
-        text = f"[{mid}](https://t.me/c/{str(cid)[4:]}/{mid})"
+        mid = message.message_id
+        text = f"{get_channel_link(message)}/{mid}"
     except Exception as e:
         logger.warning(f"Message link error: {e}", exc_info=True)
 
@@ -234,19 +348,6 @@ def random_str(i: int) -> str:
         logger.warning(f"Random str error: {e}", exc_info=True)
 
     return text
-
-
-def receive_data(message: Message) -> dict:
-    # Receive data from exchange channel
-    data = {}
-    try:
-        text = get_text(message)
-        if text:
-            data = loads(text)
-    except Exception as e:
-        logger.warning(f"Receive data error: {e}")
-
-    return data
 
 
 def t2s(text: str) -> str:
@@ -265,6 +366,7 @@ def thread(target: Callable, args: tuple) -> bool:
         t = Thread(target=target, args=args)
         t.daemon = True
         t.start()
+
         return True
     except Exception as e:
         logger.warning(f"Thread error: {e}", exc_info=True)
@@ -272,21 +374,11 @@ def thread(target: Callable, args: tuple) -> bool:
     return False
 
 
-def user_mention(uid: int) -> str:
-    # Get a mention text
-    text = ""
-    try:
-        text = f"[{uid}](tg://user?id={uid})"
-    except Exception as e:
-        logger.warning(f"User mention error: {e}", exc_info=True)
-
-    return text
-
-
 def wait_flood(e: FloodWait) -> bool:
     # Wait flood secs
     try:
         sleep(e.x + uniform(0.5, 1.0))
+
         return True
     except Exception as e:
         logger.warning(f"Wait flood error: {e}", exc_info=True)
