@@ -33,7 +33,6 @@ See [this article](https://scp-079.org/watch/).
         - `timers.py` : Timer functions
         - `user.py` : Functions about user and channel object
     - handlers
-        - `command.py` : Handle commands
         - `message.py`: Handle messages
     - `glovar.py` : Global variables
 - `.gitignore` : Ignore

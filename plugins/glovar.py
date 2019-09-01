@@ -33,8 +33,6 @@ logger = logging.getLogger(__name__)
 
 # Init
 
-all_commands: List[str] = ["status", "version"]
-
 default_user_status: Dict[str, Set[int]] = {
     "ban": set(),
     "delete": set()
