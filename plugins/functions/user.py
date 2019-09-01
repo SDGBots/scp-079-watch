@@ -51,6 +51,7 @@ def add_watch_user(client, watch_type: str, uid: int) -> bool:
         glovar.watch_ids[watch_type][uid] = until
         until = crypt_str("encrypt", until, glovar.key)
         share_watch_user(client, watch_type, uid, until)
+
         return True
     except Exception as e:
         logger.warning(f"Add watch user error: {e}", exc_info=True)
@@ -58,7 +59,7 @@ def add_watch_user(client, watch_type: str, uid: int) -> bool:
     return False
 
 
-def terminate_watch_user(client: Client, message: Message, watch_type: str) -> bool:
+def terminate_user(client: Client, message: Message, watch_type: str) -> bool:
     # Add user to watch list
     try:
         gid = message.chat.id

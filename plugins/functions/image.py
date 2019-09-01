@@ -17,11 +17,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from os import remove
-from os.path import exists
+import re
 
-from PIL import Image
+from PIL import Image, ImageEnhance
 from pyrogram import Message
+from pytesseract import image_to_string
+from pyzbar.pyzbar import decode
 
 from .. import glovar
 
@@ -29,60 +30,124 @@ from .. import glovar
 logger = logging.getLogger(__name__)
 
 
-def get_color(image_path: str) -> bool:
-    pass
-
-
-def get_image_status(message: Message) -> dict:
-    image = {
-        "file_id": "",
-        "ocr": False,
-        "qrcode": False
-    }
+def get_color(path: str) -> bool:
+    # Get the picture's color, check if most of it is yellow
     try:
-        if ((message.animation and message.animation.thumb)
-                or (message.audio and message.audio.thumb)
-                or (message.document and message.document.thumb)
-                or message.photo
-                or message.sticker
-                or (message.video and message.video.thumb)
-                or (message.video_note and message.video_note.thumb)):
-            if message.animation:
-                image["file_id"] = message.animation.thumb.file_id
-            elif message.audio:
-                image["file_id"] = message.audio.thumb.file_id
+        image = Image.open(path).convert('YCbCr')
+        w, h = image.size
+        data = image.getdata()
+        cnt = 0
+        for i, ycbcr in enumerate(data):
+            y, cb, cr = ycbcr
+            if 86 <= cb <= 117 and 140 <= cr <= 168:
+                cnt += 1
+
+        if cnt > w * h * 0.3:
+            return True
+    except Exception as e:
+        logger.warning(f"Get color error: {e}", exc_info=True)
+
+    return False
+
+
+def get_image_status(message: Message) -> (str, bool):
+    file_id = ""
+    big = False
+    try:
+        if (message.photo
+                or (message.sticker and not message.sticker.is_animated)
+                or message.document):
+            if message.photo:
+                file_id = message.photo.file_id
+            elif message.sticker:
+                file_id = message.sticker.file_id
             elif message.document:
                 if (message.document.mime_type
                         and "image" in message.document.mime_type
                         and "gif" not in message.document.mime_type
                         and message.document.file_size
-                        and message.document.file_size <= glovar.image_size):
-                    image["file_id"] = message.document.file_id
-                    image["ocr"] = True
-                    image["qrcode"] = True
-                else:
-                    image["file_id"] = message.document.thumb.file_id
-            elif message.photo:
-                image["file_id"] = message.photo.sizes[-1].file_id
-                image["ocr"] = True
-                image["qrcode"] = True
-            elif message.sticker:
-                image["file_id"] = message.sticker.file_id
-                image["ocr"] = True
-                image["qrcode"] = True
+                        and message.document.file_size < glovar.image_size):
+                    file_id = message.document.file_id
+            elif message.game:
+                file_id = message.game.photo.file_id
+
+        if file_id:
+            big = True
+        elif ((message.animation and message.animation.thumbs)
+              or (message.audio and message.audio.thumbs)
+              or (message.video and message.video.thumbs)
+              or (message.video_note and message.video_note.thumbs)
+              or (message.document and message.document.thumbs)):
+            if message.animation:
+                file_id = message.animation.thumbs[-1].file_id
+            elif message.audio:
+                file_id = message.audio.thumbs[-1].file_id
             elif message.video:
-                image["file_id"] = message.video.thumb.file_id
+                file_id = message.video.thumbs[-1].file_id
             elif message.video_note:
-                image["file_id"] = message.video_note.thumb.file_id
+                file_id = message.video_note.thumbs[-1].file_id
     except Exception as e:
         logger.warning(f"Get image status error: {e}", exc_info=True)
+
+    return file_id, big
+
+
+def get_ocr(path: str) -> str:
+    result = ""
+    try:
+        image = Image.open(path)
+        enhancer = ImageEnhance.Contrast(image)
+        image = enhancer.enhance(2)
+        result = image_to_string(image, lang='chi_sim+chi_tra')
+        if not result:
+            image = image.convert('L')
+            image = get_processed_image(image)
+            result = image_to_string(image, lang='chi_sim+chi_tra')
+
+        if result:
+            result = re.sub(r"\s{2,}", " ", result)
+    except Exception as e:
+        logger.warning(f"Get OCR error: {e}", exc_info=True)
+
+    return result
+
+
+def get_processed_image(image: Image.Image) -> Image.Image:
+    try:
+        image.thumbnail((200, 200))
+        s = 0
+        total = 0
+        for count, color in image.getcolors(image.size[0] * image.size[1]):
+            s += count * color
+            total += count
+
+        aver = int(s / total)
+        if aver < 110:
+            image = image.point(lambda x: 0 if x > aver + 20 else 255)
+        else:
+            image = image.point(lambda x: 0 if x < aver - 20 else 255)
+    except Exception as e:
+        logger.warning('Get image error: %s', e)
 
     return image
 
 
-def get_ocr(image_path: str) -> str:
-    pass
+def get_qrcode(path: str) -> str:
+    # Get QR code
+    result = ""
+    try:
+        image = Image.open(path)
+        image = image.convert("L")
+        image = image.point(lambda x: 0 if x < 150 else 255)
+        decoded_list = decode(image)
+        if decoded_list:
+            for decoded in decoded_list:
+                if decoded.type == "QRCODE":
+                    result += f"{decoded.data}\n"
 
+            if result:
+                result = result[:-1]
+    except Exception as e:
+        logger.warning(f"Get qrcode error: {e}", exc_info=True)
 
-def get_qrcode(image_path: str) -> str:
-    pass
+    return result
