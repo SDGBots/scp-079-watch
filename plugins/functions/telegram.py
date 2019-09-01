@@ -17,17 +17,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from struct import pack
-from typing import List, Optional, Union
+from typing import Iterable, List, Optional, Union
 
-from pyrogram import ChatMember, Client, InlineKeyboardMarkup, Message
-from pyrogram.api.functions.messages import GetWebPagePreview
-from pyrogram.api.types import FileLocation, MessageMediaPhoto, MessageMediaWebPage, Photo, PhotoSize, WebPage
-from pyrogram.client.ext.utils import encode
+from pyrogram import Client, InlineKeyboardMarkup, Message
+from pyrogram.api.types import InputPeerUser, InputPeerChannel
 from pyrogram.errors import ChannelInvalid, ChannelPrivate, FloodWait, PeerIdInvalid
+from pyrogram.errors import UsernameInvalid, UsernameNotOccupied
 
-from .. import glovar
-from .etc import get_text, wait_flood
+from .etc import get_int, wait_flood
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -51,116 +48,63 @@ def download_media(client: Client, file_id: str, file_path: str):
     return result
 
 
-def get_admins(client: Client, cid: int) -> Optional[Union[bool, List[ChatMember]]]:
-    # Get a group's admins
+def get_messages(client: Client, cid: int, mids: Iterable[int]) -> Optional[List[Message]]:
+    # Get some messages
     result = None
     try:
         flood_wait = True
         while flood_wait:
             flood_wait = False
             try:
-                result = client.get_chat_members(chat_id=cid, filter="administrators")
+                result = client.get_messages(chat_id=cid, message_ids=mids)
             except FloodWait as e:
                 flood_wait = True
                 wait_flood(e)
-            except (PeerIdInvalid, ChannelInvalid, ChannelPrivate):
+    except Exception as e:
+        logger.warning(f"Get messages error: {e}", exc_info=True)
+
+    return result
+
+
+def resolve_peer(client: Client, pid: Union[int, str]) -> Optional[Union[bool, InputPeerChannel, InputPeerUser]]:
+    # Get an input peer by id
+    result = None
+    try:
+        flood_wait = True
+        while flood_wait:
+            flood_wait = False
+            try:
+                result = client.resolve_peer(pid)
+            except FloodWait as e:
+                flood_wait = True
+                wait_flood(e)
+            except (UsernameInvalid, UsernameNotOccupied):
                 return False
-
-        result = result.chat_members
     except Exception as e:
-        logger.warning(f"Get admin ids in {cid} error: {e}", exc_info=True)
+        logger.warning(f"Resolve peer error: {e}", exc_info=True)
 
     return result
 
 
-def get_preview(client: Client, message: Message) -> dict:
-    # Get message's preview
-    preview = {
-        "text": None,
-        "file_id": None
-    }
+def resolve_username(client: Client, username: str) -> (str, int):
+    # Resolve peer by username
+    peer_type = ""
+    peer_id = 0
     try:
-        if should_preview(message):
-            result = None
-            message_text = get_text(message)
-            flood_wait = True
-            while flood_wait:
-                flood_wait = False
-                try:
-                    result = client.send(GetWebPagePreview(message=message_text))
-                except FloodWait as e:
-                    flood_wait = True
-                    wait_flood(e)
-
+        if username:
+            result = resolve_peer(client, username)
             if result:
-                photo = None
-                if isinstance(result, MessageMediaWebPage):
-                    web_page = result.webpage
-                    if isinstance(web_page, WebPage):
-                        text = ""
-                        if web_page.display_url:
-                            text += web_page.display_url + "\n\n"
-
-                        if web_page.site_name:
-                            text += web_page.site_name + "\n\n"
-
-                        if web_page.title:
-                            text += web_page.title + "\n\n"
-
-                        if web_page.description:
-                            text += web_page.description + "\n\n"
-
-                        preview["text"] = text.strip()
-                        if web_page.photo:
-                            if isinstance(web_page.photo, Photo):
-                                photo = web_page.photo
-                elif isinstance(result, MessageMediaPhoto):
-                    media = result.photo
-                    if isinstance(media, Photo):
-                        photo = media
-
-                if photo:
-                    size = photo.sizes[-1]
-                    if isinstance(size, PhotoSize):
-                        file_size = size.size
-                        if file_size < glovar.image_size:
-                            loc = size.location
-                            if isinstance(loc, FileLocation):
-                                file_id = encode(
-                                    pack(
-                                        "<iiqqqqi",
-                                        2,
-                                        loc.dc_id,
-                                        photo.id,
-                                        photo.access_hash,
-                                        loc.volume_id,
-                                        loc.secret,
-                                        loc.local_id
-                                    )
-                                )
-                                preview["file_id"] = file_id
+                if isinstance(result, InputPeerChannel):
+                    peer_type = "channel"
+                    peer_id = result.channel_id
+                    peer_id = get_int(f"-100{peer_id}")
+                elif isinstance(result, InputPeerUser):
+                    peer_type = "user"
+                    peer_id = result.user_id
     except Exception as e:
-        logger.warning(f"Get preview error: {e}", exc_info=True)
+        logger.warning(f"Resolve username error: {e}", exc_info=True)
 
-    return preview
-
-
-def kick_chat_member(client: Client, cid: int, uid: int) -> Optional[Union[bool, Message]]:
-    # Kick a chat member in a group
-    result = None
-    try:
-        flood_wait = True
-        while flood_wait:
-            flood_wait = False
-            try:
-                result = client.kick_chat_member(chat_id=cid, user_id=uid)
-            except FloodWait as e:
-                flood_wait = True
-                wait_flood(e)
-    except Exception as e:
-        logger.warning(f"Kick chat member {uid} in {cid} error: {e}", exc_info=True)
-
-    return result
+    return peer_type, peer_id
 
 
 def send_document(client: Client, cid: int, file: str, text: str = None, mid: int = None,
@@ -176,6 +120,7 @@ def send_document(client: Client, cid: int, file: str, text: str = None, mid: in
                     chat_id=cid,
                     document=file,
                     caption=text,
+                    parse_mode="html",
                     reply_to_message_id=mid,
                     reply_markup=markup
                 )
@@ -203,6 +148,7 @@ def send_message(client: Client, cid: int, text: str, mid: int = None,
                     result = client.send_message(
                         chat_id=cid,
                         text=text,
+                        parse_mode="html",
                         disable_web_page_preview=True,
                         reply_to_message_id=mid,
                         reply_markup=markup
@@ -216,18 +162,3 @@ def send_message(client: Client, cid: int, text: str, mid: int = None,
         logger.warning(f"Send message to {cid} error: {e}", exc_info=True)
 
     return result
-
-
-def should_preview(message: Message) -> bool:
-    # Check if the message should be previewed
-    if message.entities or message.caption_entities:
-        if message.entities:
-            entities = message.entities
-        else:
-            entities = message.caption_entities
-
-        for en in entities:
-            if en.type in ["url", "text_link"]:
-                return True
-
-    return False

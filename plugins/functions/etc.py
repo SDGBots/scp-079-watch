@@ -202,6 +202,17 @@ def get_full_name(user: User) -> str:
     return text
 
 
+def get_int(text: str) -> int:
+    # Get a int from a string
+    result = None
+    try:
+        result = int(text)
+    except Exception as e:
+        logger.info(f"Get int error: {e}", exc_info=True)
+
+    return result
+
+
 def get_links(message: Message) -> List[str]:
     # Get a message's links
     result = []
