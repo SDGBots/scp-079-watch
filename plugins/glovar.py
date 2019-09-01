@@ -69,6 +69,7 @@ regex: Dict[str, bool] = {
     "ad": True,
     "aff": True,
     "ban": False,
+    "bio": False,
     "con": True,
     "del": False,
     "iml": True,
