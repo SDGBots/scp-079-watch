@@ -28,7 +28,7 @@ from .etc import code, code_block, get_md5sum, get_text, thread, wait_flood
 from .file import crypt_file, data_to_file, delete_file, get_new_path
 from .group import get_message
 from .image import get_file_id
-from .telegram import get_group_info, send_document, send_message
+from .telegram import send_document, send_message
 
 # Enable logging
 logger = logging.getLogger(__name__)
