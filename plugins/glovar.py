@@ -18,73 +18,72 @@
 
 import logging
 import pickle
-import re
 from configparser import RawConfigParser
 from os import mkdir
 from os.path import exists
 from shutil import rmtree
 from threading import Lock
-from typing import Dict, List, Set
-
-from .functions.etc import random_str
+from typing import Dict, List, Set, Union
 
 # Enable logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.WARNING,
+    filename='log',
+    filemode='w'
+)
 logger = logging.getLogger(__name__)
 
 # Init
 
-default_user_status: Dict[str, Set[int]] = {
-    "ban": set(),
-    "delete": set()
-}
-
-file_ids: Dict[str, Set[str]] = {
-    "ban": set(),
-    "delete": set()
-}
-# file_ids = {
-#     "ban": {"file_id"},
-#     "delete": {"file_id"}
+contents: Dict[str, str] = {}
+# contents = {
+#     "content": "wb"
 # }
 
-lock_image: Lock = Lock()
+default_user_status: Dict[str, Union[int, str, Set[int]]] = {
+    "join": 0,
+    "type": "",
+    "until": 0,
+    "ban": set(),
+    "delete": set()
+}
 
-lock_text: Lock = Lock()
+locks: Dict[str, Lock] = {
+    "message": Lock(),
+    "regex": Lock()
+}
 
 names: dict = {
-    "ad": "广告用语",
-    "ava": "头像分析",
-    "bad": "敏感检测",
-    "ban": "自动封禁",
-    "bio": "简介封禁",
-    "con": "联系方式",
-    "del": "自动删除",
-    "eme": "应急模式",
-    "nm": "名称封禁",
-    "wb": "追踪封禁",
-    "wd": "追踪删除",
-    "sti": "贴纸删除",
-    "test": "测试用例"
+    "wb": "封禁追踪",
+    "wd": "删除追踪"
 }
 
-receivers_status: List[str] = ["CAPTCHA", "CLEAN", "LANG", "NOFLOOD", "NOPORN", "NOSPAM", "MANAGE", "RECHECK"]
+receivers: Dict[str, List[str]] = {
+    "version": ["HIDE"],
+    "watch": ["ANALYZE", "CAPTCHA", "CLEAN", "LANG", "LONG",
+              "NOFLOOD", "NOPORN", "NOSPAM", "MANAGE", "RECHECK", "WATCH"]
+}
 
-sender = "WATCH"
+regex: Dict[str, bool] = {
+    "ad": True,
+    "aff": True,
+    "ban": False,
+    "con": True,
+    "del": False,
+    "iml": True,
+    "sho": True,
+    "spc": True,
+    "spe": True,
+    "tgl": True,
+    "tgp": True,
+    "wb": True,
+    "wd": True
+}
+
+sender: str = "WATCH"
 
 version: str = "0.0.3"
-
-watch_ids: Dict[str, Dict[int, int]] = {
-    "ban": {},
-    "delete": {}
-}
-# watch_ids = {
-#     "ban": {
-#         12345678: 0
-#     },
-#     "delete": {
-#         12345678: 0
-#     }
-# }
 
 # Read data from config.ini
 
@@ -96,9 +95,11 @@ prefix_str: str = "/!"
 captcha_id: int = 0
 clean_id: int = 0
 lang_id: int = 0
+long_id: int = 0
 noflood_id: int = 0
 noporn_id: int = 0
 nospam_id: int = 0
+recheck_id: int = 0
 tip_id: int = 0
 user_id: int = 0
 warn_id: int = 0
@@ -117,11 +118,8 @@ time_delete: int = 0
 time_new: int = 0
 
 # [encrypt]
-key: str = ""
+key: Union[str, bytes] = ""
 password: str = ""
-
-# [o5]
-o5_1_id: int = 0
 
 try:
     config = RawConfigParser()
@@ -132,9 +130,11 @@ try:
     captcha_id = int(config["bots"].get("captcha_id", captcha_id))
     clean_id = int(config["bots"].get("clean_id", clean_id))
     lang_id = int(config["bots"].get("lang_id", lang_id))
+    long_id = int(config["bots"].get("long_id", long_id))
     noflood_id = int(config["bots"].get("noflood_id", noflood_id))
     noporn_id = int(config["bots"].get("noporn_id", noporn_id))
     nospam_id = int(config["bots"].get("nospam_id", nospam_id))
+    recheck_id = int(config["bots"].get("recheck_id", recheck_id))
     tip_id = int(config["bots"].get("tip_id", tip_id))
     user_id = int(config["bots"].get("user_id", user_id))
     warn_id = int(config["bots"].get("warn_id", warn_id))
@@ -151,9 +151,8 @@ try:
     time_new = int(config["custom"].get("time_new", time_new))
     # [encrypt]
     key = config["encrypt"].get("key", key)
+    key = key.encode("utf-8")
     password = config["encrypt"].get("password", password)
-    # [o5]
-    o5_1_id = int(config["o5"].get("o5_1_id", o5_1_id))
 except Exception as e:
     logger.warning(f"Read data from config.ini error: {e}", exc_info=True)
 
@@ -162,9 +161,11 @@ if (prefix == []
         or captcha_id == 0
         or clean_id == 0
         or lang_id == 0
+        or long_id == 0
         or noflood_id == 0
         or noporn_id == 0
         or nospam_id == 0
+        or recheck_id == 0
         or tip_id == 0
         or user_id == 0
         or warn_id == 0
@@ -177,12 +178,13 @@ if (prefix == []
         or time_ban == 0
         or time_delete == 0
         or time_new == 0
-        or key in {"", "[DATA EXPUNGED]"}
-        or password in {"", "[DATA EXPUNGED]"}
-        or o5_1_id == 0):
-    raise SystemExit('No proper settings')
+        or key in {"", b"[DATA EXPUNGED]"}
+        or password in {"", "[DATA EXPUNGED]"}):
+    logger.critical("No proper settings")
+    raise SystemExit("No proper settings")
 
-bot_ids: Set[int] = {captcha_id, clean_id, lang_id, noflood_id, noporn_id, nospam_id, user_id, warn_id}
+bot_ids: Set[int] = {captcha_id, clean_id, lang_id, long_id,
+                     noflood_id, noporn_id, nospam_id, recheck_id, tip_id, user_id, warn_id}
 
 # Load data from pickle
 
@@ -207,48 +209,30 @@ bad_ids: Dict[str, Set[int]] = {
 #     "users": {12345678}
 # }
 
-except_ids: Dict[str, Set[int]] = {
+except_ids: Dict[str, Set[Union[int, str]]] = {
     "channels": set(),
-    "users": set()
+    "long": set(),
+    "temp": set()
 }
 # except_ids = {
 #     "channels": {-10012345678},
-#     "users": {12345678}
+#     "long": {content},
+#     "temp": {content}
 # }
 
-new_user_ids: Dict[int, Set[int]] = {}
-# new_user_ids = {
-#     0: {12345678},
-#     1: {12345679}
-# }
-
-for i in range(time_new):
-    new_user_ids[i] = set()
-
-user_ids: Dict[int, Dict[str, Set[int]]] = {}
+user_ids: Dict[int, Dict[str, Union[int, str, Set[int]]]] = {}
 # user_ids = {
 #     12345678: {
+#         "join": 0,
+#         "type": "",
+#         "until": 0,
 #         "ban": set(),
 #         "delete": set()
 #     }
 # }
 
-# Init compiled variable
-
-compiled: dict = {}
-# compiled = {
-#     "test": re.compile("test text", re.I | re.M | re.S)
-# }
-
-for word_type in names:
-    compiled[word_type] = re.compile(fr"预留{names[f'{word_type}']}词组 {random_str(16)}", re.I | re.M | re.S)
-
-# Init time data
-
-time_now: int = 0
-
 # Load data
-file_list: List[str] = ["bad_ids", "compiled", "except_ids", "new_user_ids", "time_now", "user_ids"]
+file_list: List[str] = ["bad_ids", "except_ids", "user_ids"]
 for file in file_list:
     try:
         try:
@@ -265,17 +249,6 @@ for file in file_list:
     except Exception as e:
         logger.critical(f"Load data {file} backup error: {e}")
         raise SystemExit("[DATA CORRUPTION]")
-
-if time_now > time_new:
-    time_now = 0
-    with open("data/time_now", "wb") as f:
-        pickle.dump(eval("time_now"), f)
-
-if len(new_user_ids) > time_new:
-    for i in range(time_new, len(new_user_ids)):
-        new_user_ids.pop(i, set())
-        with open("data/new_user_ids", "wb") as f:
-            pickle.dump(eval("new_user_ids"), f)
 
 # Start program
 copyright_text = (f"SCP-079-{sender} v{version}, Copyright (C) 2019 SCP-079 <https://scp-079.org>\n"

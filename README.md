@@ -29,7 +29,6 @@ See [this article](https://scp-079.org/watch/).
         - `image.py` : Functions about image
         - `receive.py` : Receive data from exchange channel
         - `telegram.py` : Some telegram functions
-        - `tests.py` : Some test functions
         - `timers.py` : Timer functions
         - `user.py` : Functions about user and channel object
     - handlers
