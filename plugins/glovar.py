@@ -60,8 +60,8 @@ locks: Dict[str, Lock] = {
 }
 
 names: dict = {
-    "wb": "封禁追踪",
-    "wd": "删除追踪"
+    "ban": "封禁追踪",
+    "delete": "删除追踪"
 }
 
 receivers: Dict[str, List[str]] = {

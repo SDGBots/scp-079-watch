@@ -17,40 +17,51 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from time import time
 
 from pyrogram import Client, Message
 
 from .. import glovar
-from .channel import share_watch_user
-from .etc import crypt_str
+from .channel import forward_evidence, share_watch_user
+from .etc import crypt_str, get_now
+from .file import save
 from .ids import init_user_id
 
 # Enable logging
 logger = logging.getLogger(__name__)
 
 
-def add_watch_count(watch_type: str, gid: int, uid: int) -> bool:
+def add_watch_count(the_type: str, gid: int, uid: int) -> bool:
     # Change a user's watch count
+    result = False
     try:
-        init_user_id(uid)
-        glovar.user_ids[uid][watch_type].add(gid)
-        if len(glovar.user_ids[uid][watch_type]) == eval(f"glovar.limit_{watch_type}"):
-            return True
+        if init_user_id(uid):
+            glovar.user_ids[uid][the_type].add(gid)
+            if len(glovar.user_ids[uid][the_type]) >= eval(f"glovar.limit_{the_type}"):
+                glovar.user_ids[uid]["type"] = the_type
+                glovar.user_ids[uid][the_type] = set()
+                if the_type == "ban":
+                    glovar.user_ids[uid]["delete"] = set()
+
+                result = True
+
+            save("user_ids")
     except Exception as e:
         logger.warning(f"Add watch count error: {e}", exc_info=True)
 
-    return False
+    return result
 
 
-def add_watch_user(client, watch_type: str, uid: int) -> bool:
-    # Add watch user, and share it
+def add_watch_user(client: Client, the_type: str, uid: int) -> bool:
+    # Add a watch ban user, share it
     try:
-        now = time()
-        until = now + eval(f"glovar.time_{watch_type}")
-        glovar.watch_ids[watch_type][uid] = until
+        now = get_now()
+        until = now + glovar.time_ban
+        glovar.user_ids[uid]["type"] = the_type
+        glovar.user_ids[uid]["until"] = until
+        until = str(until)
         until = crypt_str("encrypt", until, glovar.key)
-        share_watch_user(client, watch_type, uid, until)
+        share_watch_user(client, the_type, uid, until)
+        save("user_ids")
 
         return True
     except Exception as e:
@@ -59,14 +70,16 @@ def add_watch_user(client, watch_type: str, uid: int) -> bool:
     return False
 
 
-def terminate_user(client: Client, message: Message, watch_type: str) -> bool:
+def terminate_user(client: Client, message: Message, the_type: str) -> bool:
     # Add user to watch list
     try:
         gid = message.chat.id
         uid = message.from_user.id
-        should_watch = add_watch_count(watch_type, gid, uid)
+        should_watch = add_watch_count(the_type, gid, uid)
         if should_watch:
-            add_watch_user(client, watch_type, uid)
+            result = forward_evidence(client, message, glovar.names[the_type])
+            if result:
+                add_watch_user(client, the_type, uid)
 
         return True
     except Exception as e:

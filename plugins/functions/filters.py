@@ -284,16 +284,16 @@ def is_watch_message(client: Client, message: Message) -> str:
                     return ""
 
                 if is_wb_text(message_text):
-                    return "wb"
+                    return "ban"
 
             # Check the forward from name:
             forward_name = get_forward_name(message)
             if forward_name:
                 if is_ban_text(forward_name):
-                    return "wb"
+                    return "ban"
 
                 if is_wb_text(forward_name):
-                    return "wb"
+                    return "ban"
 
             # Check the document filename:
             file_name = get_document_filename(message)
@@ -302,7 +302,7 @@ def is_watch_message(client: Client, message: Message) -> str:
                     return ""
 
                 if is_wb_text(file_name):
-                    return "wb"
+                    return "ban"
 
             # Check image
             ocr = ""
@@ -318,7 +318,7 @@ def is_watch_message(client: Client, message: Message) -> str:
                         if is_ban_text(qrcode):
                             return ""
 
-                        return "wb"
+                        return "ban"
 
                     ocr = get_ocr(image_path)
                     if ocr:
@@ -326,7 +326,7 @@ def is_watch_message(client: Client, message: Message) -> str:
                             return ""
 
                         if is_wb_text(ocr):
-                            return "wb"
+                            return "ban"
 
             # Check preview
             preview_text = ""
@@ -347,7 +347,7 @@ def is_watch_message(client: Client, message: Message) -> str:
                     return ""
 
                 if is_wb_text(preview_text):
-                    return "wb"
+                    return "ban"
 
                 if web_page.photo:
                     if web_page.photo.file_size <= glovar.image_size:
@@ -360,7 +360,7 @@ def is_watch_message(client: Client, message: Message) -> str:
                                 if is_ban_text(qrcode):
                                     return ""
 
-                                return "wb"
+                                return "ban"
 
                             ocr = get_ocr(image_path)
                             if ocr:
@@ -368,7 +368,7 @@ def is_watch_message(client: Client, message: Message) -> str:
                                     return ""
 
                                 if is_wb_text(ocr):
-                                    return "wb"
+                                    return "ban"
 
             # Start detect watch delete
 
@@ -390,35 +390,35 @@ def is_watch_message(client: Client, message: Message) -> str:
                     or message.via_bot
                     or message.video
                     or message.video_note):
-                return "wd"
+                return "delete"
 
             # Check the message's text
             if message_text:
                 if is_wd_text(message_text):
-                    return "wd"
+                    return "delete"
 
             # Check the message's mention
             if message.entities:
                 for en in message.entities:
                     if en.type == "mention":
-                        return "wd"
+                        return "delete"
 
             # Check Telegram link
             bypass = get_stripped_link(get_channel_link(message))
             links = get_links(message)
             tg_links = filter(lambda l: is_regex_text("tgl", l), links)
             if not all([bypass in link for link in tg_links]):
-                return "wd"
+                return "delete"
 
             # Check image
             if ocr:
                 if is_wd_text(message_text):
-                    return "wd"
+                    return "delete"
 
             # Check preview
             if preview_text:
                 if is_wd_text(preview_text):
-                    return "wd"
+                    return "delete"
         except Exception as e:
             logger.warning(f"Is watch message error: {e}", exc_info=True)
         finally:
