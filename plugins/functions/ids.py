@@ -26,6 +26,19 @@ from .file import save
 logger = logging.getLogger(__name__)
 
 
+def init_group_id(gid: int) -> bool:
+    # Init group data
+    try:
+        if glovar.declared_message_ids.get(gid) is None:
+            glovar.declared_message_ids[gid] = set()
+
+        return True
+    except Exception as e:
+        logger.warning(f"Init group id {gid} error: {e}", exc_info=True)
+
+    return False
+
+
 def init_user_id(uid: int) -> bool:
     # Init user data
     try:

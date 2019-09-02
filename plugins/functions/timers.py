@@ -41,7 +41,7 @@ def backup_files(client: Client) -> bool:
                     action="backup",
                     action_type="pickle",
                     data=file,
-                    file=file
+                    file=f"data/{file}"
                 )
                 sleep(5)
             except Exception as e:
@@ -57,6 +57,17 @@ def backup_files(client: Client) -> bool:
 def reset_data() -> bool:
     # Reset user data every month
     try:
+        glovar.bad_ids = {
+            "channels": set(),
+            "users": set()
+        }
+        save("bad_ids")
+
+        glovar.except_ids = {
+            "temp": set()
+        }
+        save("except_ids")
+
         glovar.user_ids = {}
         save("user_ids")
 
@@ -77,8 +88,9 @@ def update_status(client: Client) -> bool:
             action_type="status",
             data="awake"
         )
+
         return True
     except Exception as e:
-        logger.warning(f"Update status error: {e}")
+        logger.warning(f"Update status error: {e}", exc_info=True)
 
     return False
