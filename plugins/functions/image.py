@@ -50,7 +50,7 @@ def get_color(path: str) -> bool:
     return False
 
 
-def get_image_status(message: Message) -> (str, bool):
+def get_file_id(message: Message) -> (str, bool):
     file_id = ""
     big = False
     try:

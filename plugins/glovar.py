@@ -41,6 +41,11 @@ contents: Dict[str, str] = {}
 #     "content": "wb"
 # }
 
+declared_message_ids: Dict[int, Set[int]] = {}
+# declared_message_ids = {
+#     -10012345678: {123}
+# }
+
 default_user_status: Dict[str, Union[int, str, Set[int]]] = {
     "join": 0,
     "type": "",
@@ -73,6 +78,7 @@ regex: Dict[str, bool] = {
     "con": True,
     "del": False,
     "iml": True,
+    "nm": False,
     "sho": True,
     "spc": True,
     "spe": True,
