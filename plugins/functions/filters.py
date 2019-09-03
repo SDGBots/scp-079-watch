@@ -490,7 +490,7 @@ def is_watch_message(client: Client, message: Message) -> str:
             # Start detect watch delete
 
             # Check if the user is already in watch delete
-            if not is_watch_delete(None, message):
+            if is_watch_delete(None, message):
                 return ""
 
             # Check if the user already recorded in this group
