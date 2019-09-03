@@ -375,7 +375,7 @@ def is_watch_message(client: Client, message: Message) -> str:
             forward_name = get_forward_name(message)
             if forward_name:
                 if is_ban_text(forward_name):
-                    return "ban"
+                    return ""
 
                 if is_wb_text(forward_name):
                     return "ban"
