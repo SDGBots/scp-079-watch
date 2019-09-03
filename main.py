@@ -43,4 +43,4 @@ scheduler.add_job(reset_data, "cron", day=glovar.reset_day, hour=22)
 scheduler.start()
 
 # Hold
-app.idle()
+app.run()
