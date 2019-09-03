@@ -23,7 +23,7 @@ from time import sleep
 from pyrogram import Client
 
 from .. import glovar
-from .channel import share_data
+from .channel import share_data, share_regex_count
 from .file import save
 
 # Enable logging
@@ -74,6 +74,27 @@ def reset_data() -> bool:
         return True
     except Exception as e:
         logger.warning(f"Reset data error: {e}", exc_info=True)
+
+    return False
+
+
+def send_count(client: Client) -> bool:
+    # Send regex count to REGEX
+    if glovar.locks["regex"].acquire():
+        try:
+            for word_type in glovar.regex:
+                share_regex_count(client, word_type)
+                word_list = list(eval(f"glovar.{word_type}_words"))
+                for word in word_list:
+                    eval(f"glovar.{word_type}_words")[word] = 0
+
+                save(f"{word_type}_words")
+
+            return True
+        except Exception as e:
+            logger.warning(f"Send count error: {e}", exc_info=True)
+        finally:
+            glovar.locks["regex"].release()
 
     return False
 

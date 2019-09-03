@@ -19,10 +19,12 @@
 import logging
 from typing import Iterable, List, Optional, Union
 
-from pyrogram import Client, InlineKeyboardMarkup, Message
+from pyrogram import ChatMember, Client, InlineKeyboardMarkup, Message
+from pyrogram.api.types import InputPeerUser, InputPeerChannel
 from pyrogram.errors import ChannelInvalid, ChannelPrivate, FloodWait, PeerIdInvalid
+from pyrogram.errors import UsernameInvalid, UsernameNotOccupied, UserNotParticipant
 
-from .etc import wait_flood
+from .etc import get_int, wait_flood
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -46,6 +48,26 @@ def download_media(client: Client, file_id: str, file_path: str):
     return result
 
 
+def get_chat_member(client: Client, cid: int, uid: int) -> Optional[ChatMember]:
+    # Get information about one member of a chat
+    result = None
+    try:
+        flood_wait = True
+        while flood_wait:
+            flood_wait = False
+            try:
+                result = client.get_chat_member(chat_id=cid, user_id=uid)
+            except FloodWait as e:
+                flood_wait = True
+                wait_flood(e)
+            except UserNotParticipant:
+                result = False
+    except Exception as e:
+        logger.warning(f"Get chat member error: {e}", exc_info=True)
+
+    return result
+
+
 def get_messages(client: Client, cid: int, mids: Iterable[int]) -> Optional[List[Message]]:
     # Get some messages
     result = None
@@ -62,6 +84,47 @@ def get_messages(client: Client, cid: int, mids: Iterable[int]) -> Optional[List
         logger.warning(f"Get messages error: {e}", exc_info=True)
 
     return result
+
+
+def resolve_peer(client: Client, pid: Union[int, str]) -> Optional[Union[bool, InputPeerChannel, InputPeerUser]]:
+    # Get an input peer by id
+    result = None
+    try:
+        flood_wait = True
+        while flood_wait:
+            flood_wait = False
+            try:
+                result = client.resolve_peer(pid)
+            except FloodWait as e:
+                flood_wait = True
+                wait_flood(e)
+            except (UsernameInvalid, UsernameNotOccupied):
+                return False
+    except Exception as e:
+        logger.warning(f"Resolve peer error: {e}", exc_info=True)
+
+    return result
+
+
+def resolve_username(client: Client, username: str) -> (str, int):
+    # Resolve peer by username
+    peer_type = ""
+    peer_id = 0
+    try:
+        if username:
+            result = resolve_peer(client, username)
+            if result:
+                if isinstance(result, InputPeerChannel):
+                    peer_type = "channel"
+                    peer_id = result.channel_id
+                    peer_id = get_int(f"-100{peer_id}")
+                elif isinstance(result, InputPeerUser):
+                    peer_type = "user"
+                    peer_id = result.user_id
+    except Exception as e:
+        logger.warning(f"Resolve username error: {e}", exc_info=True)
+
+    return peer_type, peer_id
 
 
 def send_document(client: Client, cid: int, file: str, text: str = None, mid: int = None,

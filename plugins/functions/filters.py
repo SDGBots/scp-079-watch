@@ -23,11 +23,12 @@ from pyrogram import Client, Filters, Message, WebPage
 
 from .. import glovar
 from .channel import get_content
-from .etc import get_channel_link, get_document_filename, get_forward_name, get_now
+from .etc import get_channel_link, get_document_filename, get_entity_text, get_forward_name, get_now
 from .etc import get_links, get_stripped_link, get_text
 from .file import delete_file, get_downloaded_path, save
 from .ids import init_user_id
 from .image import get_file_id, get_ocr, get_qrcode
+from .telegram import get_chat_member, resolve_username
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -101,6 +102,19 @@ def is_declared_message(_, message: Message) -> bool:
     return False
 
 
+def is_hide_channel(_, message: Message) -> bool:
+    # Check if the message is sent from the hide channel
+    try:
+        if message.chat:
+            cid = message.chat.id
+            if cid == glovar.hide_channel_id:
+                return True
+    except Exception as e:
+        logger.warning(f"Is hide channel error: {e}", exc_info=True)
+
+    return False
+
+
 def is_new_user(_, message: Message) -> bool:
     # Check if the message is sent from a new joined member
     try:
@@ -159,6 +173,11 @@ declared_message = Filters.create(
     name="Declared message"
 )
 
+hide_channel = Filters.create(
+    func=is_hide_channel,
+    name="Hide Channel"
+)
+
 new_user = Filters.create(
     name="New User",
     func=is_new_user
@@ -214,6 +233,32 @@ def is_declared_message_id(gid: int, mid: int) -> bool:
     return False
 
 
+def is_exe(message: Message) -> bool:
+    # Check if the message contain a exe
+    try:
+        if message.document:
+            if message.document.file_name:
+                file_name = message.document.file_name
+                for file_type in ["apk", "bat", "cmd", "com", "exe", "vbs"]:
+                    if re.search(f"[.]{file_type}$", file_name, re.I):
+                        return True
+
+            if message.document.mime_type:
+                mime_type = message.document.mime_type
+                if "executable" in mime_type:
+                    return True
+
+        links = get_links(message)
+        for link in links:
+            for file_type in ["apk", "bat", "cmd", "exe", "vbs"]:
+                if re.search(f"[.]{file_type}$", link, re.I):
+                    return True
+    except Exception as e:
+        logger.warning(f"Is exe error: {e}", exc_info=True)
+
+    return False
+
+
 def is_restricted_channel(message: Message) -> bool:
     # Check if the message is forwarded form restricted channel
     try:
@@ -260,6 +305,39 @@ def is_regex_text(word_type: str, text: str, again: bool = False) -> bool:
     return result
 
 
+def is_tgl(client: Client, message: Message) -> bool:
+    # Check if the message includes the Telegram link
+    try:
+        bypass = get_stripped_link(get_channel_link(message))
+        links = get_links(message)
+        tg_links = filter(lambda l: is_regex_text("tgl", l), links)
+        if not all([f"{bypass}/" in f"{link}/" for link in tg_links]):
+            return True
+
+        if message.entities:
+            for en in message.entities:
+                if en.type == "mention":
+                    username = get_entity_text(message, en)[1:]
+                    if message.chat.username and username == message.chat.username:
+                        continue
+
+                    peer_type, peer_id = resolve_username(client, username)
+                    if peer_type == "channel" and peer_id not in glovar.except_ids["channels"]:
+                        return True
+
+                    if peer_type == "user":
+                        member = get_chat_member(client, message.chat.id, peer_id)
+                        if member is False:
+                            return True
+
+                        if member and member.status not in {"creator", "administrator", "member"}:
+                            return True
+    except Exception as e:
+        logger.warning(f"Is tgl error: {e}", exc_info=True)
+
+    return False
+
+
 def is_watch_message(client: Client, message: Message) -> str:
     # Check if the message should be watched
     result = ""
@@ -276,6 +354,13 @@ def is_watch_message(client: Client, message: Message) -> str:
             # Check if the user already recorded in this group
             if gid in glovar.user_ids[uid]["ban"]:
                 return ""
+
+            # Check detected records
+            content = get_content(client, message)
+            if content:
+                detection = glovar.contents.get(content, "")
+                if detection == "ban":
+                    return detection
 
             # Check the message's text
             message_text = get_text(message)
@@ -303,6 +388,10 @@ def is_watch_message(client: Client, message: Message) -> str:
 
                 if is_wb_text(file_name):
                     return "ban"
+
+            # Check exe file
+            if is_exe(message):
+                return "ban"
 
             # Check image
             ocr = ""
@@ -380,6 +469,12 @@ def is_watch_message(client: Client, message: Message) -> str:
             if gid in glovar.user_ids[uid]["delete"]:
                 return ""
 
+            # Check detected records
+            if content:
+                detection = glovar.contents.get(content, "")
+                if detection == "delete":
+                    return detection
+
             # Some media type
             if (message.animation
                     or message.audio
@@ -404,10 +499,7 @@ def is_watch_message(client: Client, message: Message) -> str:
                         return "delete"
 
             # Check Telegram link
-            bypass = get_stripped_link(get_channel_link(message))
-            links = get_links(message)
-            tg_links = filter(lambda l: is_regex_text("tgl", l), links)
-            if not all([bypass in link for link in tg_links]):
+            if is_tgl(client, message):
                 return "delete"
 
             # Check image
@@ -418,6 +510,13 @@ def is_watch_message(client: Client, message: Message) -> str:
             # Check preview
             if preview_text:
                 if is_wd_text(preview_text):
+                    return "delete"
+
+            if web_page:
+                if (web_page.audio
+                        or web_page.document
+                        or web_page.animation
+                        or web_page.video):
                     return "delete"
         except Exception as e:
             logger.warning(f"Is watch message error: {e}", exc_info=True)

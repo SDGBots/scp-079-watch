@@ -17,34 +17,75 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from copy import deepcopy
 
-from pyrogram import Client, Filters
+from pyrogram import Client, Filters, Message
 
 from .. import glovar
-from ..functions.etc import crypt_str, receive_data
+from ..functions.channel import get_content
+from ..functions.etc import get_now
 from ..functions.file import save
-from ..functions.filters import class_a, class_c, class_d, class_e, new_user, watch_ban, is_watch_message
-from ..functions.user import terminate_watch_user
+from ..functions.filters import class_c, class_d, class_e, declared_message, hide_channel, is_watch_message
+from ..functions.filters import new_user, watch_ban
+from ..functions.ids import init_user_id
+from ..functions.receive import receive_add_bad, receive_add_except, receive_declared_message
+from ..functions.receive import receive_regex, receive_remove_bad, receive_remove_except, receive_remove_watch
+from ..functions.receive import receive_text_data, receive_watch_user
+from ..functions.user import terminate_user
 
 # Enable logging
 logger = logging.getLogger(__name__)
 
 
-@Client.on_message(Filters.incoming & Filters.group & ~class_a & ~class_c & ~class_d & ~class_e & ~watch_ban & new_user)
-def check(client, message):
+@Client.on_message(Filters.incoming & Filters.group & ~Filters.new_chat_members & ~watch_ban & new_user
+                   & ~class_c & ~class_d & ~class_e & ~declared_message)
+def check(client: Client, message: Message) -> bool:
+    # Check the messages sent from groups
     try:
-        watch_type = is_watch_message(client, message)
-        if watch_type:
-            terminate_watch_user(client, message, watch_type)
+        if not message.from_user:
+            return True
+
+        # Watch message
+        detection = is_watch_message(client, message)
+        if detection:
+            content = get_content(client, message)
+            glovar.contents[content] = detection
+            return terminate_user(client, message, detection)
+
+        return True
     except Exception as e:
         logger.warning(f"Check error: {e}", exc_info=True)
 
+    return False
 
-@Client.on_message(Filters.channel & ~Filters.command(glovar.all_commands, glovar.prefix))
-def process_data(_, message):
+
+@Client.on_message(Filters.incoming & Filters.group & Filters.new_chat_members
+                   & ~class_c & ~class_d)
+def check_join(_: Client, message: Message) -> bool:
+    # Check new joined user
+    if glovar.locks["message"].acquire():
+        try:
+            if not message.from_user:
+                return True
+
+            uid = message.from_user.id
+            if init_user_id(uid):
+                glovar.user_ids[uid]["join"] = get_now()
+                save("user_ids")
+
+            return True
+        except Exception as e:
+            logger.warning(f"Check join error: {e}", exc_info=True)
+        finally:
+            glovar.locks["message"].release()
+
+    return False
+
+
+@Client.on_message(Filters.incoming & Filters.channel & hide_channel)
+def process_data(client: Client, message: Message) -> bool:
+    # Process the data in exchange channel
     try:
-        data = receive_data(message)
+        data = receive_text_data(message)
         if data:
             sender = data["from"]
             receivers = data["to"]
@@ -56,129 +97,127 @@ def process_data(_, message):
             # but this is to ensure that the permissions are clear,
             # so it is intentionally written like this
             if glovar.sender in receivers:
-                if sender == "LANG":
+
+                if sender == "CLEAN":
 
                     if action == "add":
-                        the_id = data["id"]
-                        the_type = data["type"]
                         if action_type == "bad":
-                            if the_type == "user":
-                                glovar.bad_ids["users"].add(the_id)
-                                save("bad_ids")
+                            receive_add_bad(sender, data)
                         elif action_type == "watch":
-                            until = int(crypt_str("decrypt", data["until"], glovar.key))
-                            if the_type == "ban":
-                                glovar.watch_ids["ban"][the_id] = until
-                            elif the_type == "delete":
-                                glovar.watch_ids["delete"][the_id] = until
+                            receive_watch_user(data)
+
+                    elif action == "update":
+                        if action_type == "declare":
+                            receive_declared_message(data)
+
+                elif sender == "HIDE":
+
+                    if action == "version":
+                        if action_type == "ask":
+                            receive_version_ask(data)
+
+                elif sender == "LANG":
+
+                    if action == "add":
+                        if action_type == "bad":
+                            receive_add_bad(sender, data)
+                        elif action_type == "watch":
+                            receive_watch_user(data)
+
+                    elif action == "update":
+                        if action_type == "declare":
+                            receive_declared_message(data)
+
+                elif sender == "LONG":
+
+                    if action == "add":
+                        if action_type == "bad":
+                            receive_add_bad(sender, data)
+                        elif action_type == "watch":
+                            receive_watch_user(data)
+
+                    elif action == "update":
+                        if action_type == "declare":
+                            receive_declared_message(data)
 
                 elif sender == "MANAGE":
 
                     if action == "add":
-                        the_id = data["id"]
-                        the_type = data["type"]
                         if action_type == "bad":
-                            if the_type == "channel":
-                                glovar.bad_ids["channels"].add(the_id)
-                                save("bad_ids")
+                            receive_add_bad(sender, data)
                         elif action_type == "except":
-                            if the_type == "channel":
-                                glovar.except_ids["channels"].add(the_id)
-                            elif the_type == "user":
-                                glovar.except_ids["users"].add(the_id)
-
-                            save("except_ids")
+                            receive_add_except(client, data)
 
                     elif action == "remove":
-                        the_id = data["id"]
-                        the_type = data["type"]
                         if action_type == "bad":
-                            if the_type == "channel":
-                                glovar.bad_ids["channels"].discard(the_id)
-                            elif the_type == "user":
-                                glovar.bad_ids["users"].discard(the_id)
-                                glovar.watch_ids["ban"].pop(the_id, {})
-                                glovar.watch_ids["delete"].pop(the_id, {})
-                                if glovar.user_ids.get(the_id):
-                                    glovar.user_ids[the_id] = deepcopy(glovar.default_user_status)
-
-                                save("user_ids")
-
-                            save("bad_ids")
+                            receive_remove_bad(sender, data)
                         elif action_type == "except":
-                            if the_type == "channel":
-                                glovar.except_ids["channels"].discard(the_id)
-                            elif the_type == "user":
-                                glovar.except_ids["users"].discard(the_id)
-
-                            save("except_ids")
+                            receive_remove_except(client, data)
                         elif action_type == "watch":
-                            if the_type == "all":
-                                glovar.watch_ids["ban"].pop(the_id, 0)
-                                glovar.watch_ids["delete"].pop(the_id, 0)
+                            receive_remove_watch(data)
 
                 elif sender == "NOFLOOD":
 
                     if action == "add":
-                        the_id = data["id"]
-                        the_type = data["type"]
                         if action_type == "bad":
-                            if the_type == "user":
-                                glovar.bad_ids["users"].add(the_id)
-                                save("bad_ids")
+                            receive_add_bad(sender, data)
                         elif action_type == "watch":
-                            until = int(crypt_str("decrypt", data["until"], glovar.key))
-                            if the_type == "ban":
-                                glovar.watch_ids["ban"][the_id] = until
-                            elif the_type == "delete":
-                                glovar.watch_ids["delete"][the_id] = until
+                            receive_watch_user(data)
+
+                    elif action == "update":
+                        if action_type == "declare":
+                            receive_declared_message(data)
 
                 elif sender == "NOPORN":
 
                     if action == "add":
-                        the_id = data["id"]
-                        the_type = data["type"]
                         if action_type == "bad":
-                            if the_type == "user":
-                                glovar.bad_ids["users"].add(the_id)
-                                save("bad_ids")
+                            receive_add_bad(sender, data)
                         elif action_type == "watch":
-                            until = int(crypt_str("decrypt", data["until"], glovar.key))
-                            if the_type == "ban":
-                                glovar.watch_ids["ban"][the_id] = until
-                            elif the_type == "delete":
-                                glovar.watch_ids["delete"][the_id] = until
+                            receive_watch_user(data)
+
+                    elif action == "update":
+                        if action_type == "declare":
+                            receive_declared_message(data)
 
                 elif sender == "NOSPAM":
 
                     if action == "add":
-                        the_id = data["id"]
-                        the_type = data["type"]
                         if action_type == "bad":
-                            if the_type == "user":
-                                glovar.bad_ids["users"].add(the_id)
-                                save("bad_ids")
+                            receive_add_bad(sender, data)
                         elif action_type == "watch":
-                            until = int(crypt_str("decrypt", data["until"], glovar.key))
-                            if the_type == "ban":
-                                glovar.watch_ids["ban"][the_id] = until
-                            elif the_type == "delete":
-                                glovar.watch_ids["delete"][the_id] = until
+                            receive_watch_user(data)
+
+                    elif action == "update":
+                        if action_type == "declare":
+                            receive_declared_message(data)
 
                 elif sender == "RECHECK":
 
                     if action == "add":
-                        the_id = data["id"]
-                        the_type = data["type"]
                         if action_type == "bad":
-                            if the_type == "user":
-                                glovar.bad_ids["users"].add(the_id)
-                                save("bad_ids")
+                            receive_add_bad(sender, data)
                         elif action_type == "watch":
-                            until = int(crypt_str("decrypt", data["until"], glovar.key))
-                            if the_type == "ban":
-                                glovar.watch_ids["ban"][the_id] = until
-                            elif the_type == "delete":
-                                glovar.watch_ids["delete"][the_id] = until
+                            receive_watch_user(data)
+
+                    elif action == "update":
+                        if action_type == "declare":
+                            receive_declared_message(data)
+
+                elif sender == "REGEX":
+
+                    if action == "update":
+                        if action_type == "download":
+                            receive_regex(client, message, data)
+
+                elif sender == "USER":
+
+                    if action == "remove":
+                        if action_type == "bad":
+                            receive_remove_bad(sender, data)
+
+        return True
     except Exception as e:
         logger.warning(f"Process data error: {e}", exc_info=True)
+
+    return False
