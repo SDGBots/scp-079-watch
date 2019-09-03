@@ -24,6 +24,7 @@ from pyrogram import Client
 
 from .. import glovar
 from .channel import share_data, share_regex_count
+from .etc import get_now
 from .file import save
 
 # Enable logging
@@ -50,6 +51,22 @@ def backup_files(client: Client) -> bool:
         return True
     except Exception as e:
         logger.warning(f"Backup error: {e}", exc_info=True)
+
+    return False
+
+
+def interval_hour_01() -> bool:
+    # Execute every hour
+    try:
+        # Delete stickers and animations in groups
+        now = get_now()
+        for uid in list(glovar.user_ids):
+            if now - glovar.user_ids[uid]["join"] >= glovar.time_new:
+                glovar.user_ids.pop(uid, {})
+
+        save("user_ids")
+    except Exception as e:
+        logger.warning(f"Interval hour 01 error: {e}", exc_info=True)
 
     return False
 
