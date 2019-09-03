@@ -238,8 +238,18 @@ user_ids: Dict[int, Dict[str, Union[int, str, Set[int]]]] = {}
 #     }
 # }
 
+# Init word variables
+
+for word_type in regex:
+    locals()[f"{word_type}_words"]: Dict[str, Dict[str, Union[float, int]]] = {}
+
+# type_words = {
+#     "regex": 0
+# }
+
 # Load data
 file_list: List[str] = ["bad_ids", "except_ids", "user_ids"]
+file_list += [f"{f}_words" for f in regex]
 for file in file_list:
     try:
         try:
