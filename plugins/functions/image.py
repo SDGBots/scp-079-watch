@@ -51,6 +51,7 @@ def get_color(path: str) -> bool:
 
 
 def get_file_id(message: Message) -> (str, bool):
+    # Get media message's image file id
     file_id = ""
     big = False
     try:
@@ -86,6 +87,8 @@ def get_file_id(message: Message) -> (str, bool):
                 file_id = message.video.thumbs[-1].file_id
             elif message.video_note:
                 file_id = message.video_note.thumbs[-1].file_id
+            elif message.document:
+                file_id = message.document.thumbs[-1].file_id
     except Exception as e:
         logger.warning(f"Get image status error: {e}", exc_info=True)
 
