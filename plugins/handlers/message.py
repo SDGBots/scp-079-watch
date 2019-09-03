@@ -30,6 +30,7 @@ from ..functions.ids import init_user_id
 from ..functions.receive import receive_add_bad, receive_add_except, receive_declared_message
 from ..functions.receive import receive_regex, receive_remove_bad, receive_remove_except, receive_remove_watch
 from ..functions.receive import receive_status_ask, receive_text_data, receive_version_ask, receive_watch_user
+from ..functions.timers import send_count
 from ..functions.user import terminate_user
 
 # Enable logging
@@ -217,6 +218,9 @@ def process_data(client: Client, message: Message) -> bool:
                     if action == "update":
                         if action_type == "download":
                             receive_regex(client, message, data)
+                        elif action_type == "count":
+                            if data == "ask":
+                                send_count(client)
 
                 elif sender == "USER":
 
