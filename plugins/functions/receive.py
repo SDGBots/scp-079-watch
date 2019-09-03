@@ -24,7 +24,7 @@ from typing import Any
 from pyrogram import Client, Message
 
 from .. import glovar
-from .channel import get_content
+from .channel import get_content, share_data
 from .etc import crypt_str, get_int, get_text, thread
 from .file import crypt_file, delete_file, get_new_path, get_downloaded_path, save
 from .ids import init_group_id, init_user_id
@@ -230,6 +230,30 @@ def receive_text_data(message: Message) -> dict:
         logger.warning(f"Receive data error: {e}")
 
     return data
+
+
+def receive_version_ask(client: Client, data: dict) -> bool:
+    # Receive version info request
+    try:
+        aid = data["admin_id"]
+        mid = data["message_id"]
+        share_data(
+            client=client,
+            receivers=["HIDE"],
+            action="version",
+            action_type="reply",
+            data={
+                "admin_id": aid,
+                "message_id": mid,
+                "version": glovar.version
+            }
+        )
+
+        return True
+    except Exception as e:
+        logger.warning(f"Receive version ask error: {e}", exc_info=True)
+
+    return False
 
 
 def receive_watch_user(data: dict) -> bool:

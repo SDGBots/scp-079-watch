@@ -29,7 +29,7 @@ from ..functions.filters import new_user, watch_ban
 from ..functions.ids import init_user_id
 from ..functions.receive import receive_add_bad, receive_add_except, receive_declared_message
 from ..functions.receive import receive_regex, receive_remove_bad, receive_remove_except, receive_remove_watch
-from ..functions.receive import receive_text_data, receive_watch_user
+from ..functions.receive import receive_text_data, receive_version_ask, receive_watch_user
 from ..functions.user import terminate_user
 
 # Enable logging
@@ -114,7 +114,7 @@ def process_data(client: Client, message: Message) -> bool:
 
                     if action == "version":
                         if action_type == "ask":
-                            receive_version_ask(data)
+                            receive_version_ask(client, data)
 
                 elif sender == "LANG":
 
