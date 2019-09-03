@@ -222,6 +222,20 @@ def is_ban_text(text: str) -> bool:
     return False
 
 
+def is_bio_text(text: str) -> bool:
+    # Check if the text is bio text
+    try:
+        if is_regex_text("bio", text):
+            return True
+
+        if is_ban_text(text):
+            return True
+    except Exception as e:
+        logger.warning(f"Is bio text error: {e}", exc_info=True)
+
+    return False
+
+
 def is_declared_message_id(gid: int, mid: int) -> bool:
     # Check if the message's ID is declared by other bots
     try:
@@ -255,6 +269,20 @@ def is_exe(message: Message) -> bool:
                     return True
     except Exception as e:
         logger.warning(f"Is exe error: {e}", exc_info=True)
+
+    return False
+
+
+def is_nm_text(text: str) -> bool:
+    # Check if the text if nm text
+    try:
+        if is_regex_text("nm", text):
+            return True
+
+        if is_ban_text(text):
+            return True
+    except Exception as e:
+        logger.warning(f"Is nm text error: {e}", exc_info=True)
 
     return False
 

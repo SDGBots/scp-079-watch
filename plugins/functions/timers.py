@@ -61,8 +61,9 @@ def interval_hour_01() -> bool:
         # Delete stickers and animations in groups
         now = get_now()
         for uid in list(glovar.user_ids):
-            if now - glovar.user_ids[uid]["join"] >= glovar.time_new:
-                glovar.user_ids.pop(uid, {})
+            if now - glovar.user_ids[uid]["join"] > glovar.time_new:
+                if now > glovar.user_ids[uid]["until"]:
+                    glovar.user_ids.pop(uid, {})
 
         save("user_ids")
     except Exception as e:

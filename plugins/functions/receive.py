@@ -18,6 +18,7 @@
 
 import logging
 import pickle
+from copy import deepcopy
 from json import loads
 from typing import Any
 
@@ -25,8 +26,8 @@ from pyrogram import Client, Message
 
 from .. import glovar
 from .channel import get_content, share_data
-from .etc import crypt_str, get_int, get_text, thread
-from .file import crypt_file, delete_file, get_new_path, get_downloaded_path, save
+from .etc import crypt_str, get_int, get_now, get_text, thread
+from .file import crypt_file, data_to_file, delete_file, get_new_path, get_downloaded_path, save
 from .ids import init_group_id, init_user_id
 
 # Enable logging
@@ -215,6 +216,61 @@ def receive_remove_watch(data: dict) -> bool:
         return True
     except Exception as e:
         logger.warning(f"Receive remove watch error: {e}", exc_info=True)
+
+    return False
+
+
+def receive_status_ask(client: Client, data: dict) -> bool:
+    # Receive version info request
+    try:
+        aid = data["admin_id"]
+        mid = data["message_id"]
+        now = get_now()
+        new_count = 0
+        ban_count = 0
+        delete_count = 0
+        pending_ban_count = 0
+        pending_delete_count = 0
+        user_ids = deepcopy(glovar.user_ids)
+        for uid in user_ids:
+            if now - user_ids[uid]["join"] < glovar.time_new:
+                new_count += 1
+
+            if user_ids[uid]["type"] == "ban" and now < user_ids[uid]["until"]:
+                ban_count += 1
+
+            if user_ids[uid]["type"] == "delete" and now < user_ids[uid]["until"]:
+                delete_count += 1
+
+            if now - user_ids[uid]["join"] < glovar.time_new and user_ids[uid]["ban"]:
+                pending_ban_count += 1
+
+            if now - user_ids[uid]["join"] < glovar.time_new and user_ids[uid]["delete"]:
+                pending_delete_count += 1
+
+        status = {
+            "新用户": f"{new_count} 名",
+            "建议封禁": f"{ban_count} 名",
+            "建议删除": f"{delete_count} 名",
+            "观察封禁": f"{pending_ban_count} 名",
+            "观察删除": f"{pending_delete_count} 名"
+        }
+        file = data_to_file(status)
+        share_data(
+            client=client,
+            receivers=["MANAGE"],
+            action="status",
+            action_type="reply",
+            data={
+                "admin_id": aid,
+                "message_id": mid
+            },
+            file=file
+        )
+
+        return True
+    except Exception as e:
+        logger.warning(f"Receive version ask error: {e}", exc_info=True)
 
     return False
 
