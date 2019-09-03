@@ -24,7 +24,7 @@ from pyrogram import Client, Message
 from pyrogram.errors import FloodWait
 
 from .. import glovar
-from .etc import code, code_block, get_md5sum, get_text, thread, wait_flood
+from .etc import code, code_block, get_forward_name, get_md5sum, get_text, thread, wait_flood
 from .file import crypt_file, data_to_file, delete_file, get_new_path
 from .group import get_message
 from .image import get_file_id
@@ -63,6 +63,10 @@ def forward_evidence(client: Client, message: Message, level: str,
                 f"用户 ID：{code(uid)}\n"
                 f"操作等级：{code(level)}\n"
                 f"规则：{code('全局规则')}\n")
+
+        forward_name = get_forward_name(message)
+        if forward_name:
+            text += f"来源名称：{code(forward_name)}\n"
 
         if message.contact or message.location or message.venue or message.video_note or message.voice:
             text += f"附加信息：{code('可能涉及隐私而未转发')}\n"
