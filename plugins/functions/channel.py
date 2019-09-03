@@ -76,7 +76,12 @@ def forward_evidence(client: Client, message: Message, level: str,
             text += f"附加信息：{code(more)}\n"
 
         # DO NOT try to forward these types of message
-        if message.contact or message.location or message.venue or message.video_note or message.voice or message.game:
+        if (message.contact or message.location
+                or message.venue
+                or message.video_note
+                or message.voice
+                or message.game
+                or message.service):
             result = send_message(client, glovar.watch_channel_id, text)
             return result
 
