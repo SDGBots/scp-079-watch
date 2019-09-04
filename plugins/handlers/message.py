@@ -74,7 +74,7 @@ def check_join(client: Client, message: Message) -> bool:
             if name and is_nm_text(name):
                 return True
 
-            bio = get_user_bio(client, message.from_user.id)
+            bio = get_user_bio(client, message.from_user.username or message.from_user.id)
             if bio and is_bio_text(bio):
                 return True
 
