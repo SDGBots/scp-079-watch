@@ -134,18 +134,15 @@ def receive_regex(client: Client, message: Message, data: str) -> bool:
 
             words_data = receive_file_data(client, message, True)
             if words_data:
-                try:
-                    pop_set = set(eval(f"glovar.{file_name}")) - set(words_data)
-                    new_set = set(words_data) - set(eval(f"glovar.{file_name}"))
-                    for word in pop_set:
-                        eval(f"glovar.{file_name}").pop(word, 0)
+                pop_set = set(eval(f"glovar.{file_name}")) - set(words_data)
+                new_set = set(words_data) - set(eval(f"glovar.{file_name}"))
+                for word in pop_set:
+                    eval(f"glovar.{file_name}").pop(word, 0)
 
-                    for word in new_set:
-                        eval(f"glovar.{file_name}")[word] = 0
+                for word in new_set:
+                    eval(f"glovar.{file_name}")[word] = 0
 
-                    save(file_name)
-                except Exception as e:
-                    logger.warning(f"Update download regex error: {e}", exc_info=True)
+                save(file_name)
 
             return True
         except Exception as e:
