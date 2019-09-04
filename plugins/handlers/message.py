@@ -42,20 +42,23 @@ logger = logging.getLogger(__name__)
                    & ~class_c & ~class_d & ~class_e & ~declared_message)
 def check(client: Client, message: Message) -> bool:
     # Check the messages sent from groups
-    try:
-        if not message.from_user:
+    if glovar.locks["message"].acquire():
+        try:
+            if not message.from_user:
+                return True
+
+            # Watch message
+            detection = is_watch_message(client, message)
+            if detection:
+                content = get_content(client, message)
+                glovar.contents[content] = detection
+                return terminate_user(client, message, detection)
+
             return True
-
-        # Watch message
-        detection = is_watch_message(client, message)
-        if detection:
-            content = get_content(client, message)
-            glovar.contents[content] = detection
-            return terminate_user(client, message, detection)
-
-        return True
-    except Exception as e:
-        logger.warning(f"Check error: {e}", exc_info=True)
+        except Exception as e:
+            logger.warning(f"Check error: {e}", exc_info=True)
+        finally:
+            glovar.locks["message"].release()
 
     return False
 

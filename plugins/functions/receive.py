@@ -125,15 +125,15 @@ def receive_file_data(client: Client, message: Message, decrypt: bool = False) -
 
 def receive_regex(client: Client, message: Message, data: str) -> bool:
     # Receive regex
-    try:
-        file_name = data
-        word_type = file_name.split("_")[0]
-        if word_type not in glovar.regex:
-            return True
+    if glovar.locks["regex"].acquire():
+        try:
+            file_name = data
+            word_type = file_name.split("_")[0]
+            if word_type not in glovar.regex:
+                return True
 
-        words_data = receive_file_data(client, message, True)
-        if words_data:
-            if glovar.locks["regex"].acquire():
+            words_data = receive_file_data(client, message, True)
+            if words_data:
                 try:
                     pop_set = set(eval(f"glovar.{file_name}")) - set(words_data)
                     new_set = set(words_data) - set(eval(f"glovar.{file_name}"))
@@ -146,12 +146,12 @@ def receive_regex(client: Client, message: Message, data: str) -> bool:
                     save(file_name)
                 except Exception as e:
                     logger.warning(f"Update download regex error: {e}", exc_info=True)
-                finally:
-                    glovar.locks["regex"].release()
 
-        return True
-    except Exception as e:
-        logger.warning(f"Receive regex error: {e}", exc_info=True)
+            return True
+        except Exception as e:
+            logger.warning(f"Receive regex error: {e}", exc_info=True)
+        finally:
+            glovar.locks["regex"].release()
 
     return False
 

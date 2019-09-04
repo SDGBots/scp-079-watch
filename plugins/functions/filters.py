@@ -370,188 +370,186 @@ def is_watch_message(client: Client, message: Message) -> str:
     # Check if the message should be watched
     result = ""
     need_delete = []
-    if glovar.locks["message"].acquire():
-        try:
-            gid = message.chat.id
-            uid = message.from_user.id
-            if not init_user_id(uid):
+    try:
+        gid = message.chat.id
+        uid = message.from_user.id
+        if not init_user_id(uid):
+            return ""
+
+        # Start detect watch ban
+
+        # Check if the user already recorded in this group
+        if gid in glovar.user_ids[uid]["ban"]:
+            return ""
+
+        # Check detected records
+        content = get_content(client, message)
+        if content:
+            detection = glovar.contents.get(content, "")
+            if detection == "ban":
+                return detection
+
+        # Check the message's text
+        message_text = get_text(message)
+        if message_text:
+            if is_ban_text(message_text):
                 return ""
 
-            # Start detect watch ban
-
-            # Check if the user already recorded in this group
-            if gid in glovar.user_ids[uid]["ban"]:
-                return ""
-
-            # Check detected records
-            content = get_content(client, message)
-            if content:
-                detection = glovar.contents.get(content, "")
-                if detection == "ban":
-                    return detection
-
-            # Check the message's text
-            message_text = get_text(message)
-            if message_text:
-                if is_ban_text(message_text):
-                    return ""
-
-                if is_wb_text(message_text):
-                    return "ban"
-
-            # Check the forward from name:
-            forward_name = get_forward_name(message)
-            if forward_name:
-                if is_ban_text(forward_name):
-                    return ""
-
-                if is_wb_text(forward_name):
-                    return "ban"
-
-            # Check the document filename:
-            file_name = get_document_filename(message)
-            if file_name:
-                if is_ban_text(file_name):
-                    return ""
-
-                if is_wb_text(file_name):
-                    return "ban"
-
-            # Check exe file
-            if is_exe(message):
+            if is_wb_text(message_text):
                 return "ban"
 
-            # Check image
-            ocr = ""
-            file_id, big = get_file_id(message)
-            image_path = get_downloaded_path(client, file_id)
-            if is_declared_message(None, message):
+        # Check the forward from name:
+        forward_name = get_forward_name(message)
+        if forward_name:
+            if is_ban_text(forward_name):
                 return ""
-            elif image_path:
-                need_delete.append(image_path)
-                if big:
-                    qrcode = get_qrcode(image_path)
-                    if qrcode:
-                        if is_ban_text(qrcode):
-                            return ""
 
-                        return "ban"
+            if is_wb_text(forward_name):
+                return "ban"
 
-                    ocr = get_ocr(image_path)
-                    if ocr:
-                        if is_ban_text(ocr):
-                            return ""
+        # Check the document filename:
+        file_name = get_document_filename(message)
+        if file_name:
+            if is_ban_text(file_name):
+                return ""
 
-                        if is_wb_text(ocr):
-                            return "ban"
+            if is_wb_text(file_name):
+                return "ban"
 
-            # Check preview
-            preview_text = ""
-            web_page: WebPage = message.web_page
-            if web_page:
-                preview_text = web_page.display_url + "\n\n"
+        # Check exe file
+        if is_exe(message):
+            return "ban"
 
-                if web_page.site_name:
-                    preview_text += web_page.site_name + "\n\n"
+        # Check image
+        ocr = ""
+        file_id, big = get_file_id(message)
+        image_path = get_downloaded_path(client, file_id)
+        if is_declared_message(None, message):
+            return ""
+        elif image_path:
+            need_delete.append(image_path)
+            if big:
+                qrcode = get_qrcode(image_path)
+                if qrcode:
+                    if is_ban_text(qrcode):
+                        return ""
 
-                if web_page.title:
-                    preview_text += web_page.title + "\n\n"
-
-                if web_page.description:
-                    preview_text += web_page.description + "\n\n"
-
-                if is_ban_text(preview_text):
-                    return ""
-
-                if is_wb_text(preview_text):
                     return "ban"
 
-                if web_page.photo:
-                    if web_page.photo.file_size <= glovar.image_size:
-                        file_id = web_page.photo.file_id
-                        image_path = get_downloaded_path(client, file_id)
-                        if image_path:
-                            need_delete.append(image_path)
-                            qrcode = get_qrcode(image_path)
-                            if qrcode:
-                                if is_ban_text(qrcode):
-                                    return ""
+                ocr = get_ocr(image_path)
+                if ocr:
+                    if is_ban_text(ocr):
+                        return ""
 
+                    if is_wb_text(ocr):
+                        return "ban"
+
+        # Check preview
+        preview_text = ""
+        web_page: WebPage = message.web_page
+        if web_page:
+            preview_text = web_page.display_url + "\n\n"
+
+            if web_page.site_name:
+                preview_text += web_page.site_name + "\n\n"
+
+            if web_page.title:
+                preview_text += web_page.title + "\n\n"
+
+            if web_page.description:
+                preview_text += web_page.description + "\n\n"
+
+            if is_ban_text(preview_text):
+                return ""
+
+            if is_wb_text(preview_text):
+                return "ban"
+
+            if web_page.photo:
+                if web_page.photo.file_size <= glovar.image_size:
+                    file_id = web_page.photo.file_id
+                    image_path = get_downloaded_path(client, file_id)
+                    if image_path:
+                        need_delete.append(image_path)
+                        qrcode = get_qrcode(image_path)
+                        if qrcode:
+                            if is_ban_text(qrcode):
+                                return ""
+
+                            return "ban"
+
+                        ocr = get_ocr(image_path)
+                        if ocr:
+                            if is_ban_text(ocr):
+                                return ""
+
+                            if is_wb_text(ocr):
                                 return "ban"
 
-                            ocr = get_ocr(image_path)
-                            if ocr:
-                                if is_ban_text(ocr):
-                                    return ""
+        # Start detect watch delete
 
-                                if is_wb_text(ocr):
-                                    return "ban"
+        # Check if the user is already in watch delete
+        if is_watch_delete(None, message):
+            return ""
 
-            # Start detect watch delete
+        # Check if the user already recorded in this group
+        if gid in glovar.user_ids[uid]["delete"]:
+            return ""
 
-            # Check if the user is already in watch delete
-            if is_watch_delete(None, message):
-                return ""
+        # Check detected records
+        if content:
+            detection = glovar.contents.get(content, "")
+            if detection == "delete":
+                return detection
 
-            # Check if the user already recorded in this group
-            if gid in glovar.user_ids[uid]["delete"]:
-                return ""
+        # Some media type
+        if (message.animation
+                or message.audio
+                or message.document
+                or message.game
+                or message.location
+                or message.venue
+                or message.via_bot
+                or message.video
+                or message.video_note):
+            return "delete"
 
-            # Check detected records
-            if content:
-                detection = glovar.contents.get(content, "")
-                if detection == "delete":
-                    return detection
-
-            # Some media type
-            if (message.animation
-                    or message.audio
-                    or message.document
-                    or message.game
-                    or message.location
-                    or message.venue
-                    or message.via_bot
-                    or message.video
-                    or message.video_note):
+        # Check the message's text
+        if message_text:
+            if is_wd_text(message_text):
                 return "delete"
 
-            # Check the message's text
-            if message_text:
-                if is_wd_text(message_text):
+        # Check the message's mention
+        if message.entities:
+            for en in message.entities:
+                if en.type == "mention":
                     return "delete"
 
-            # Check the message's mention
-            if message.entities:
-                for en in message.entities:
-                    if en.type == "mention":
-                        return "delete"
+        # Check Telegram link
+        if is_tgl(client, message):
+            return "delete"
 
-            # Check Telegram link
-            if is_tgl(client, message):
+        # Check image
+        if ocr:
+            if is_wd_text(message_text):
                 return "delete"
 
-            # Check image
-            if ocr:
-                if is_wd_text(message_text):
-                    return "delete"
+        # Check preview
+        if preview_text:
+            if is_wd_text(preview_text):
+                return "delete"
 
-            # Check preview
-            if preview_text:
-                if is_wd_text(preview_text):
-                    return "delete"
-
-            if web_page:
-                if (web_page.audio
-                        or web_page.document
-                        or web_page.animation
-                        or web_page.video):
-                    return "delete"
-        except Exception as e:
-            logger.warning(f"Is watch message error: {e}", exc_info=True)
-        finally:
-            glovar.locks["message"].release()
-            for file in need_delete:
-                delete_file(file)
+        if web_page:
+            if (web_page.audio
+                    or web_page.document
+                    or web_page.animation
+                    or web_page.video):
+                return "delete"
+    except Exception as e:
+        logger.warning(f"Is watch message error: {e}", exc_info=True)
+    finally:
+        for file in need_delete:
+            delete_file(file)
 
     return result
 
