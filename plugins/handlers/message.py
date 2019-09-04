@@ -32,6 +32,7 @@ from ..functions.receive import receive_regex, receive_remove_bad, receive_remov
 from ..functions.receive import receive_status_ask, receive_text_data, receive_version_ask, receive_watch_user
 from ..functions.timers import send_count
 from ..functions.user import terminate_user
+from ..functions.telegram import get_user_bio
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -61,17 +62,23 @@ def check(client: Client, message: Message) -> bool:
 
 @Client.on_message(Filters.incoming & Filters.group & Filters.new_chat_members
                    & ~class_c & ~class_d)
-def check_join(_: Client, message: Message) -> bool:
+def check_join(client: Client, message: Message) -> bool:
     # Check new joined user
     if glovar.locks["message"].acquire():
         try:
             if not message.from_user:
                 return True
 
+            # Work with NOSPAM
             name = get_full_name(message.from_user)
-            if is_nm_text(name):
+            if name and is_nm_text(name):
                 return True
 
+            bio = get_user_bio(client, message.from_user.id)
+            if bio and is_bio_text(bio):
+                return True
+
+            # Update user's join status
             uid = message.from_user.id
             if init_user_id(uid):
                 glovar.user_ids[uid]["join"] = get_now()
