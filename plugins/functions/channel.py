@@ -64,13 +64,18 @@ def forward_evidence(client: Client, message: Message, level: str,
                 f"操作等级：{code(level)}\n"
                 f"规则：{code('全局规则')}\n")
 
+        if message.game:
+            text += f"消息类别：{code('游戏')}\n"
+        elif message.service:
+            text += f"消息类别：{code('服务消息')}\n"
+
         forward_name = get_forward_name(message)
         if forward_name:
             text += f"来源名称：{code(forward_name)}\n"
 
         if message.contact or message.location or message.venue or message.video_note or message.voice:
             text += f"附加信息：{code('可能涉及隐私而未转发')}\n"
-        elif message.game:
+        elif message.game or message.service:
             text += f"附加信息：{code('此类消息无法转发至频道')}\n"
         elif more:
             text += f"附加信息：{code(more)}\n"
