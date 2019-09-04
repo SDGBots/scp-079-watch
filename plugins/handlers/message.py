@@ -25,7 +25,7 @@ from ..functions.channel import get_content
 from ..functions.etc import get_full_name, get_now
 from ..functions.file import save
 from ..functions.filters import class_c, class_d, class_e, declared_message, hide_channel, is_bio_text, is_nm_text
-from ..functions.filters import is_watch_message, new_user, watch_ban
+from ..functions.filters import is_watch_message, is_watch_user, new_user, watch_ban
 from ..functions.ids import init_user_id
 from ..functions.receive import receive_add_bad, receive_add_except, receive_declared_message
 from ..functions.receive import receive_regex, receive_remove_bad, receive_remove_except, receive_remove_watch
@@ -45,6 +45,10 @@ def check(client: Client, message: Message) -> bool:
     if glovar.locks["message"].acquire():
         try:
             if not message.from_user:
+                return True
+
+            # Do not track again
+            if is_watch_user(message, "ban"):
                 return True
 
             # Watch message
