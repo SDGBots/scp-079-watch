@@ -253,7 +253,7 @@ def is_exe(message: Message) -> bool:
         if message.document:
             if message.document.file_name:
                 file_name = message.document.file_name
-                for file_type in ["apk", "bat", "cmd", "com", "exe", "vbs"]:
+                for file_type in ["apk", "bat", "cmd", "com", "exe", "pif", "scr", "vbs"]:
                     if re.search(f"[.]{file_type}$", file_name, re.I):
                         return True
 
@@ -264,7 +264,7 @@ def is_exe(message: Message) -> bool:
 
         links = get_links(message)
         for link in links:
-            for file_type in ["apk", "bat", "cmd", "exe", "vbs"]:
+            for file_type in ["apk", "bat", "cmd", "exe", "pif", "scr", "vbs"]:
                 if re.search(f"[.]{file_type}$", link, re.I):
                     return True
     except Exception as e:
