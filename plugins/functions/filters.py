@@ -250,21 +250,23 @@ def is_declared_message_id(gid: int, mid: int) -> bool:
 def is_exe(message: Message) -> bool:
     # Check if the message contain a exe
     try:
+        extensions = ["apk", "bat", "cmd", "com", "exe", "msi", "pif", "scr", "vbs"]
         if message.document:
             if message.document.file_name:
                 file_name = message.document.file_name
-                for file_type in ["apk", "bat", "cmd", "com", "exe", "pif", "scr", "vbs"]:
+                for file_type in extensions:
                     if re.search(f"[.]{file_type}$", file_name, re.I):
                         return True
 
             if message.document.mime_type:
                 mime_type = message.document.mime_type
-                if "executable" in mime_type:
+                if "application" in mime_type:
                     return True
 
+        extensions.remove("com")
         links = get_links(message)
         for link in links:
-            for file_type in ["apk", "bat", "cmd", "exe", "pif", "scr", "vbs"]:
+            for file_type in extensions:
                 if re.search(f"[.]{file_type}$", link, re.I):
                     return True
     except Exception as e:
