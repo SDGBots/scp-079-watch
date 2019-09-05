@@ -275,15 +275,15 @@ def is_exe(message: Message) -> bool:
     return False
 
 
-def is_lang_name(text: str) -> bool:
-    # Check name's language
-    try:
-        if get_lang(text) in glovar.lang_name:
-            return True
-    except Exception as e:
-        logger.warning(f"Is lang name error: {e}", exc_info=True)
-
-    return False
+# def is_lang_name(text: str) -> bool:
+#     # Check name's language
+#     try:
+#         if get_lang(text) in glovar.lang_name:
+#             return True
+#     except Exception as e:
+#         logger.warning(f"Is lang name error: {e}", exc_info=True)
+#
+#     return False
 
 
 def is_lang_text(text: str) -> bool:
@@ -415,13 +415,13 @@ def is_watch_message(client: Client, message: Message) -> str:
         # Work with NOSPAM, check the message's text
         message_text = get_text(message)
         if message_text:
-            if is_ban_text(message_text) or is_lang_name(message_text):
+            if is_ban_text(message_text):
                 return ""
 
         # Work with NOSPAM, check the forward from name:
         forward_name = get_forward_name(message)
         if forward_name:
-            if is_ban_text(forward_name):
+            if is_ban_text(forward_name) or is_ban_name(forward_name):
                 return ""
 
         # Check the message's text
