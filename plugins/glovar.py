@@ -185,8 +185,8 @@ if (prefix == []
         or hide_channel_id == 0
         or watch_channel_id == 0
         or image_size == 0
-        or lang_name in {"", "[DATA EXPUNGED]", set()}
-        or lang_text in {"", "[DATA EXPUNGED]", set()}
+        or lang_name in {"", "[DATA EXPUNGED]"} or lang_name == set()
+        or lang_text in {"", "[DATA EXPUNGED]"} or lang_text == set()
         or limit_ban == 0
         or limit_delete == 0
         or reset_day in {"", "[DATA EXPUNGED]"}
