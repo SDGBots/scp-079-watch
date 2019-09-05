@@ -154,7 +154,7 @@ try:
     image_size = int(config["custom"].get("image_size", image_size))
     lang_name = config["custom"].get("lang_name", lang_name)
     lang_name = set(lang_name.split())
-    lang_txt = config["custom"].get("lang_txt", lang_text)
+    lang_text = config["custom"].get("lang_text", lang_text)
     lang_text = set(lang_text.split())
     limit_ban = int(config["custom"].get("limit_ban", limit_ban))
     limit_delete = int(config["custom"].get("limit_delete", limit_delete))
