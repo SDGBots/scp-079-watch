@@ -90,7 +90,7 @@ regex: Dict[str, bool] = {
 
 sender: str = "WATCH"
 
-version: str = "0.0.3"
+version: str = "0.0.4"
 
 # Read data from config.ini
 
@@ -117,6 +117,8 @@ watch_channel_id: int = 0
 
 # [custom]
 image_size: int = 0
+lang_name: Union[str, Set[str]] = ""
+lang_text: Union[str, Set[str]] = ""
 limit_ban: int = 0
 limit_delete: int = 0
 reset_day: str = ""
@@ -150,6 +152,10 @@ try:
     watch_channel_id = int(config["channels"].get("watch_channel_id", watch_channel_id))
     # [custom]
     image_size = int(config["custom"].get("image_size", image_size))
+    lang_name = config["custom"].get("lang_name", lang_name)
+    lang_name = set(lang_name.split())
+    lang_txt = config["custom"].get("lang_txt", lang_text)
+    lang_text = set(lang_text.split())
     limit_ban = int(config["custom"].get("limit_ban", limit_ban))
     limit_delete = int(config["custom"].get("limit_delete", limit_delete))
     reset_day = config["custom"].get("reset_day", reset_day)
@@ -179,6 +185,8 @@ if (prefix == []
         or hide_channel_id == 0
         or watch_channel_id == 0
         or image_size == 0
+        or lang_name in {"", "[DATA EXPUNGED]", set()}
+        or lang_text in {"", "[DATA EXPUNGED]", set()}
         or limit_ban == 0
         or limit_delete == 0
         or reset_day in {"", "[DATA EXPUNGED]"}

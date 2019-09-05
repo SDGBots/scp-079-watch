@@ -23,7 +23,7 @@ from pyrogram import Client, Filters, Message, WebPage
 
 from .. import glovar
 from .channel import get_content
-from .etc import get_channel_link, get_document_filename, get_entity_text, get_forward_name, get_now
+from .etc import get_channel_link, get_document_filename, get_entity_text, get_forward_name, get_lang, get_now
 from .etc import get_links, get_stripped_link, get_text
 from .file import delete_file, get_downloaded_path, save
 from .ids import init_user_id
@@ -273,6 +273,27 @@ def is_exe(message: Message) -> bool:
     return False
 
 
+def is_lang_name(text: str) -> bool:
+    # Check name's language
+    try:
+        if get_lang(text) in glovar.lang_name:
+            return True
+    except Exception as e:
+        logger.warning(f"Is lang name error: {e}", exc_info=True)
+
+    return False
+
+
+def is_lang_text(text: str) -> bool:
+    # Check text's language
+    try:
+        if get_lang(text) in glovar.lang_text:
+            return True
+
+    except Exception as e:
+        logger.warning(f"Is lang text error: {e}", exc_info=True)
+
+
 def is_nm_text(text: str) -> bool:
     # Check if the text if nm text
     try:
@@ -389,22 +410,26 @@ def is_watch_message(client: Client, message: Message) -> str:
             if detection == "ban":
                 return detection
 
-        # Check the message's text
+        # Work with NOSPAM, check the message's text
         message_text = get_text(message)
         if message_text:
-            if is_ban_text(message_text):
+            if is_ban_text(message_text) or is_lang_name(message_text):
                 return ""
 
-            if is_wb_text(message_text):
-                return "ban"
-
-        # Check the forward from name:
+        # Work with NOSPAM, check the forward from name:
         forward_name = get_forward_name(message)
         if forward_name:
             if is_ban_text(forward_name):
                 return ""
 
-            if is_wb_text(forward_name):
+        # Check the message's text
+        if message_text:
+            if is_wb_text(message_text) or is_lang_text(message_text):
+                return "ban"
+
+        # Check the forward from name:
+        if forward_name:
+            if is_wb_text(forward_name) or is_lang_text(forward_name):
                 return "ban"
 
         # Check the document filename:
@@ -462,7 +487,7 @@ def is_watch_message(client: Client, message: Message) -> str:
             if is_ban_text(preview_text):
                 return ""
 
-            if is_wb_text(preview_text):
+            if is_wb_text(preview_text) or is_lang_text(preview_text):
                 return "ban"
 
             if web_page.photo:

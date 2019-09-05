@@ -34,6 +34,8 @@ watch_channel_id = [DATA EXPUNGED]
 
 [custom]
 image_size = [DATA EXPUNGED]
+lang_name = [DATA EXPUNGED]
+lang_text = [DATA EXPUNGED]
 limit_ban = [DATA EXPUNGED]
 limit_delete = [DATA EXPUNGED]
 reset_day = [DATA EXPUNGED]

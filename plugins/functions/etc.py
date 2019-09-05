@@ -19,11 +19,12 @@
 import logging
 from hashlib import md5
 from html import escape
+from langdetect import detect
 from random import choice, uniform
 from string import ascii_letters, digits
 from threading import Thread, Timer
 from time import sleep, time
-from typing import Any, Callable, List, Union
+from typing import Any, Callable, List, Optional, Union
 
 from cryptography.fernet import Fernet
 from opencc import convert
@@ -202,13 +203,25 @@ def get_full_name(user: User) -> str:
     return text
 
 
-def get_int(text: str) -> int:
+def get_int(text: str) -> Optional[int]:
     # Get a int from a string
     result = None
     try:
         result = int(text)
     except Exception as e:
         logger.info(f"Get int error: {e}", exc_info=True)
+
+    return result
+
+
+def get_lang(text: str) -> str:
+    # Get text's language code
+    result = ""
+    try:
+        if text:
+            result = detect(text)
+    except Exception as e:
+        logger.info(f"Get lang error: {e}", exc_info=True)
 
     return result
 
