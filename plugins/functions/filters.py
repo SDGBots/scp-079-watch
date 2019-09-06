@@ -432,7 +432,7 @@ def is_watch_message(client: Client, message: Message) -> str:
         # Work with NOSPAM and default LANG, check the forward from name:
         forward_name = get_forward_name(message)
         if forward_name:
-            if is_ban_text(forward_name) or is_nm_text(forward_name) or is_lang_name(forward_name):
+            if is_nm_text(forward_name) or is_lang_name(forward_name):
                 return ""
 
         # Check the message's text
