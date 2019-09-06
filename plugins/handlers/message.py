@@ -24,8 +24,8 @@ from .. import glovar
 from ..functions.channel import get_content
 from ..functions.etc import get_full_name, get_now
 from ..functions.file import save
-from ..functions.filters import class_c, class_d, class_e, declared_message, hide_channel, is_bio_text, is_nm_text
-from ..functions.filters import is_declared_message, is_watch_message, is_watch_user, new_user, watch_ban
+from ..functions.filters import class_c, class_d, class_e, declared_message, from_user, hide_channel, is_bio_text
+from ..functions.filters import is_nm_text, is_declared_message, is_watch_message, is_watch_user, new_user, watch_ban
 from ..functions.ids import init_user_id
 from ..functions.receive import receive_add_bad, receive_add_except, receive_declared_message
 from ..functions.receive import receive_regex, receive_remove_bad, receive_remove_except, receive_remove_watch
@@ -38,15 +38,12 @@ from ..functions.telegram import get_user_bio
 logger = logging.getLogger(__name__)
 
 
-@Client.on_message(Filters.incoming & Filters.group & ~Filters.new_chat_members & ~watch_ban & new_user
+@Client.on_message(Filters.incoming & Filters.group & from_user & ~Filters.service & ~watch_ban & new_user
                    & ~class_c & ~class_d & ~class_e & ~declared_message)
 def check(client: Client, message: Message) -> bool:
     # Check the messages sent from groups
     if glovar.locks["message"].acquire():
         try:
-            if not message.from_user:
-                return True
-
             # Check declare status
             if is_declared_message(None, message):
                 return True
@@ -71,15 +68,12 @@ def check(client: Client, message: Message) -> bool:
     return False
 
 
-@Client.on_message(Filters.incoming & Filters.group & Filters.new_chat_members
+@Client.on_message(Filters.incoming & Filters.group & from_user & Filters.new_chat_members
                    & ~class_c & ~class_d)
 def check_join(client: Client, message: Message) -> bool:
     # Check new joined user
     if glovar.locks["message"].acquire():
         try:
-            if not message.from_user:
-                return True
-
             # Work with NOSPAM
             name = get_full_name(message.from_user)
             if name and is_nm_text(name):
