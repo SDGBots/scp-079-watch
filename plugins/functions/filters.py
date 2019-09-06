@@ -458,6 +458,7 @@ def is_watch_message(client: Client, message: Message) -> str:
 
         # Check image
         ocr = ""
+        all_text = ""
         file_id, big = get_file_id(message)
         image_path = get_downloaded_path(client, file_id)
         if is_declared_message(None, message):
@@ -478,6 +479,13 @@ def is_watch_message(client: Client, message: Message) -> str:
                         return ""
 
                     if is_wb_text(ocr):
+                        return "ban"
+
+                    all_text += ocr
+                    if is_ban_text(all_text):
+                        return ""
+
+                    if is_wb_text(all_text):
                         return "ban"
 
         # Check preview
@@ -520,6 +528,13 @@ def is_watch_message(client: Client, message: Message) -> str:
                                 return ""
 
                             if is_wb_text(ocr):
+                                return "ban"
+
+                            all_text += ocr
+                            if is_ban_text(all_text):
+                                return ""
+
+                            if is_wb_text(all_text):
                                 return "ban"
 
         # Start detect watch delete
@@ -568,6 +583,10 @@ def is_watch_message(client: Client, message: Message) -> str:
         # Check image
         if ocr:
             if is_wd_text(message_text):
+                return "delete"
+
+        if all_text:
+            if is_wd_text(all_text):
                 return "delete"
 
         # Check preview
