@@ -27,7 +27,7 @@ from .etc import get_channel_link, get_document_filename, get_entity_text, get_f
 from .etc import get_links, get_stripped_link, get_text
 from .file import delete_file, get_downloaded_path, save
 from .ids import init_user_id
-from .image import get_file_id, get_ocr, get_qrcode
+from .image import get_color, get_file_id, get_ocr, get_qrcode
 from .telegram import get_chat_member, resolve_username
 
 # Enable logging
@@ -593,6 +593,11 @@ def is_watch_message(client: Client, message: Message) -> str:
 
         if all_text:
             if is_wd_text(all_text):
+                return "delete"
+
+        if image_path:
+            color = get_color(image_path)
+            if color:
                 return "delete"
 
         # Check preview
