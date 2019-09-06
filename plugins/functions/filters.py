@@ -581,6 +581,10 @@ def is_watch_message(client: Client, message: Message) -> str:
                 or message.video_note):
             return "delete"
 
+        # Forwarded message
+        if message.forward_from_chat:
+            return "delete"
+
         # Check the message's text
         if message_text:
             if is_wd_text(message_text):
