@@ -24,7 +24,7 @@ from .. import glovar
 from ..functions.channel import get_content
 from ..functions.etc import get_full_name, get_now
 from ..functions.file import save
-from ..functions.filters import class_c, class_d, class_e, declared_message, from_user, hide_channel, is_bio_text
+from ..functions.filters import class_c, class_d, class_e, declared_message, from_user, hide_channel, is_ban_bio
 from ..functions.filters import is_nm_text, is_declared_message, is_watch_message, is_watch_user, new_user, watch_ban
 from ..functions.ids import init_user_id
 from ..functions.receive import receive_add_bad, receive_add_except, receive_declared_message
@@ -80,7 +80,7 @@ def check_join(client: Client, message: Message) -> bool:
                 return True
 
             bio = get_user_bio(client, message.from_user.username or message.from_user.id)
-            if bio and is_bio_text(bio):
+            if bio and is_ban_bio(bio):
                 return True
 
             # Update user's join status

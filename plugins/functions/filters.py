@@ -238,7 +238,7 @@ def is_ban_text(text: str) -> bool:
     return False
 
 
-def is_bio_text(text: str) -> bool:
+def is_ban_bio(text: str) -> bool:
     # Check if the text is bio text
     try:
         if is_regex_text("bio", text):
