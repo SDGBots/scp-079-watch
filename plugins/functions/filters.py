@@ -359,12 +359,21 @@ def is_regex_text(word_type: str, text: str, again: bool = False) -> bool:
 def is_tgl(client: Client, message: Message) -> bool:
     # Check if the message includes the Telegram link
     try:
+        # Check links
         bypass = get_stripped_link(get_channel_link(message))
         links = get_links(message)
-        tg_links = filter(lambda l: is_regex_text("tgl", l), links)
-        if not all([f"{bypass}/" in f"{link}/" for link in tg_links]):
+        tg_links = list(filter(lambda l: is_regex_text("tgl", l), links))
+        bypass_list = [link for link in tg_links if f"{bypass}/" in f"{link}/"]
+        if len(bypass_list) != len(tg_links):
             return True
 
+        # Check text
+        text = get_text(message)
+        text = text.replace(bypass, "")
+        if is_regex_text("tgl", text):
+            return True
+
+        # Check mentions
         if message.entities:
             for en in message.entities:
                 if en.type == "mention":
