@@ -210,20 +210,6 @@ watch_delete = Filters.create(
 )
 
 
-def is_ban_name(text: str) -> bool:
-    # Check if the name will be banned
-    try:
-        if (is_regex_text("nm", text)
-                or is_regex_text("ban", text)
-                or (is_regex_text("ad", text) and is_regex_text("con", text))
-                or is_regex_text("bio", text)):
-            return True
-    except Exception as e:
-        logger.warning(f"Is ban name error: {e}", exc_info=True)
-
-    return False
-
-
 def is_ban_text(text: str) -> bool:
     # Check if the text is ban text
     try:
@@ -238,7 +224,7 @@ def is_ban_text(text: str) -> bool:
     return False
 
 
-def is_ban_bio(text: str) -> bool:
+def is_bio_text(text: str) -> bool:
     # Check if the text is bio text
     try:
         if is_regex_text("bio", text):
@@ -313,12 +299,12 @@ def is_lang_text(text: str) -> bool:
 
 
 def is_nm_text(text: str) -> bool:
-    # Check if the text if nm text
+    # Check if the text is nm text
     try:
-        if is_regex_text("nm", text):
-            return True
-
-        if is_ban_text(text):
+        if (is_regex_text("nm", text)
+                or is_regex_text("ban", text)
+                or (is_regex_text("ad", text) and is_regex_text("con", text))
+                or is_regex_text("bio", text)):
             return True
     except Exception as e:
         logger.warning(f"Is nm text error: {e}", exc_info=True)
@@ -446,7 +432,7 @@ def is_watch_message(client: Client, message: Message) -> str:
         # Work with NOSPAM and default LANG, check the forward from name:
         forward_name = get_forward_name(message)
         if forward_name:
-            if is_ban_text(forward_name) or is_ban_name(forward_name) or is_lang_name(forward_name):
+            if is_ban_text(forward_name) or is_nm_text(forward_name) or is_lang_name(forward_name):
                 return ""
 
         # Check the message's text
