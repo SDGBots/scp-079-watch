@@ -231,8 +231,8 @@ except_ids: Dict[str, Set[Union[int, str]]] = {
 }
 # except_ids = {
 #     "channels": {-10012345678},
-#     "long": {content},
-#     "temp": {content}
+#     "long": {"content"},
+#     "temp": {"content"}
 # }
 
 user_ids: Dict[int, Dict[str, Union[int, str, Set[int]]]] = {}
