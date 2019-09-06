@@ -420,7 +420,7 @@ def is_watch_message(client: Client, message: Message) -> str:
         content = get_content(client, message)
         if content:
             detection = glovar.contents.get(content, "")
-            if detection == "ban":
+            if detection:
                 return detection
 
         # Work with NOSPAM, check the message's text
