@@ -458,6 +458,10 @@ def is_watch_message(client: Client, message: Message) -> str:
         if is_exe(message):
             return "ban"
 
+        # Check Telegram link
+        if is_tgl(client, message):
+            return "delete"
+
         # Check image
         ocr = ""
         all_text = ""
@@ -581,10 +585,6 @@ def is_watch_message(client: Client, message: Message) -> str:
             for en in message.entities:
                 if en.type == "mention":
                     return "delete"
-
-        # Check Telegram link
-        if is_tgl(client, message):
-            return "delete"
 
         # Check image
         if ocr:
