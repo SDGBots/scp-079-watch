@@ -580,12 +580,6 @@ def is_watch_message(client: Client, message: Message) -> str:
             if is_wd_text(message_text):
                 return "delete"
 
-        # Check the message's mention
-        if message.entities:
-            for en in message.entities:
-                if en.type == "mention":
-                    return "delete"
-
         # Check image
         if ocr:
             if is_wd_text(message_text):
