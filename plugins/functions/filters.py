@@ -440,6 +440,10 @@ def is_watch_message(client: Client, message: Message) -> str:
             if is_wb_text(message_text) or is_lang_text(message_text):
                 return "ban"
 
+        # Check channel restriction
+        if is_restricted_channel(message):
+            return "ban"
+
         # Check the forward from name:
         if forward_name:
             if is_wb_text(forward_name) or is_lang_text(forward_name):
