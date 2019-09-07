@@ -25,7 +25,7 @@ from pyrogram.api.types import UserFull, InputPeerUser, InputPeerChannel
 from pyrogram.errors import ChannelInvalid, ChannelPrivate, FloodWait, PeerIdInvalid
 from pyrogram.errors import UsernameInvalid, UsernameNotOccupied, UserNotParticipant
 
-from .etc import get_int, wait_flood
+from .etc import get_int, t2s, wait_flood
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -99,7 +99,7 @@ def get_user_bio(client: Client, uid: int) -> Optional[str]:
                 try:
                     user: UserFull = client.send(GetFullUser(id=user_id))
                     if user:
-                        result = user.about
+                        result = t2s(user.about)
                 except FloodWait as e:
                     flood_wait = True
                     wait_flood(e)
