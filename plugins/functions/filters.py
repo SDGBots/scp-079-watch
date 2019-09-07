@@ -78,7 +78,7 @@ def is_class_e(_, message: Message) -> bool:
             if cid in glovar.except_ids["channels"]:
                 return True
 
-        content = get_content(None, message)
+        content = get_content(message)
         if content:
             if (content in glovar.except_ids["long"]
                     or content in glovar.except_ids["temp"]):
@@ -417,7 +417,7 @@ def is_watch_message(client: Client, message: Message) -> str:
             return ""
 
         # Check detected records
-        content = get_content(client, message)
+        content = get_content(message)
         if content:
             detection = glovar.contents.get(content, "")
             if detection:
@@ -445,7 +445,7 @@ def is_watch_message(client: Client, message: Message) -> str:
             return "ban"
 
         # Check the forward from name:
-        if forward_name:
+        if forward_name and forward_name not in glovar.except_ids["long"]:
             if is_wb_text(forward_name) or is_lang_text(forward_name):
                 return "ban"
 

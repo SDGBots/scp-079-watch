@@ -26,7 +26,6 @@ from pyrogram.errors import FloodWait
 from .. import glovar
 from .etc import code, code_block, get_forward_name, get_md5sum, get_text, thread, wait_flood
 from .file import crypt_file, data_to_file, delete_file, get_new_path
-from .group import get_message
 from .image import get_file_id
 from .telegram import send_document, send_message
 
@@ -113,23 +112,17 @@ def forward_evidence(client: Client, message: Message, level: str,
     return result
 
 
-def get_content(client: Optional[Client], mid: Union[int, Message]) -> str:
-    # Get the message that will be added to except_ids, return the file_id or text's hash
+def get_content(message: Message) -> str:
+    # Get the message that will be added to lists, return the file_id and text's hash
     result = ""
     try:
-        if client and isinstance(mid, int):
-            message = get_message(client, glovar.watch_channel_id, mid)
-            if message:
-                message = message.reply_to_message
-        else:
-            message = mid
-
         if message:
             file_id, _ = get_file_id(message)
             text = get_text(message)
             if file_id:
                 result += file_id
-            elif text:
+
+            if text:
                 result += get_md5sum("string", text)
     except Exception as e:
         logger.warning(f"Get content error: {e}", exc_info=True)

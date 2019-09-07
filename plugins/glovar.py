@@ -90,7 +90,7 @@ regex: Dict[str, bool] = {
 
 sender: str = "WATCH"
 
-version: str = "0.0.4"
+version: str = "0.0.5"
 
 # Read data from config.ini
 

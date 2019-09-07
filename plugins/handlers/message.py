@@ -55,7 +55,7 @@ def check(client: Client, message: Message) -> bool:
             # Watch message
             detection = is_watch_message(client, message)
             if detection:
-                content = get_content(client, message)
+                content = get_content(message)
                 glovar.contents[content] = detection
                 return terminate_user(client, message, detection)
 

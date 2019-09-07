@@ -26,8 +26,9 @@ from pyrogram import Client, Message
 
 from .. import glovar
 from .channel import get_content, share_data
-from .etc import crypt_str, get_int, get_now, get_text, thread
+from .etc import crypt_str, get_int, get_now, get_report_record, get_text, thread
 from .file import crypt_file, data_to_file, delete_file, get_new_path, get_downloaded_path, save
+from .group import get_message
 from .ids import init_group_id, init_user_id
 
 # Enable logging
@@ -45,14 +46,28 @@ def receive_add_except(client: Client, data: dict) -> bool:
             save("except_ids")
         # Receive except contents
         elif the_type in {"long", "temp"}:
-            content = get_content(client, the_id)
-            if content:
-                if the_type == "long":
-                    glovar.except_ids["long"].add(content)
-                elif the_type == "temp":
-                    glovar.except_ids["temp"].add(content)
+            message = get_message(client, glovar.watch_channel_id, the_id)
+            if not message:
+                return True
 
-                save("except_ids")
+            record = get_report_record(message)
+            if "名称" in record["rule"]:
+                if record["name"]:
+                    glovar.except_ids["long"].add(record["name"])
+
+                if record["from"]:
+                    glovar.except_ids["long"].add(record["from"])
+
+            if message.reply_to_message:
+                message = message.reply_to_message
+            else:
+                return True
+
+            content = get_content(message)
+            if content:
+                glovar.except_ids[the_type].add(content)
+
+            save("except_ids")
 
         return True
     except Exception as e:
@@ -185,14 +200,28 @@ def receive_remove_except(client: Client, data: dict) -> bool:
             save("except_ids")
         # Receive except contents
         elif the_type in {"long", "temp"}:
-            content = get_content(client, the_id)
-            if content:
-                if the_type == "long":
-                    glovar.except_ids["long"].discard(content)
-                elif the_type == "temp":
-                    glovar.except_ids["temp"].discard(content)
+            message = get_message(client, glovar.watch_channel_id, the_id)
+            if not message:
+                return True
 
-                save("except_ids")
+            record = get_report_record(message)
+            if "名称" in record["rule"]:
+                if record["name"]:
+                    glovar.except_ids["long"].discard(record["name"])
+
+                if record["from"]:
+                    glovar.except_ids["long"].discard(record["from"])
+
+            if message.reply_to_message:
+                message = message.reply_to_message
+            else:
+                return True
+
+            content = get_content(message)
+            if content:
+                glovar.except_ids[the_type].discard(content)
+
+            save("except_ids")
 
         return True
     except Exception as e:
