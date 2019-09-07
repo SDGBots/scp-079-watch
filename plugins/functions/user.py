@@ -24,6 +24,7 @@ from .. import glovar
 from .channel import forward_evidence, share_watch_user
 from .etc import crypt_str, get_now
 from .file import save
+from .filters import is_declared_message
 from .ids import init_user_id
 
 # Enable logging
@@ -73,6 +74,9 @@ def add_watch_user(client: Client, the_type: str, uid: int) -> bool:
 def terminate_user(client: Client, message: Message, the_type: str) -> bool:
     # Add user to watch list
     try:
+        if is_declared_message(None, message):
+            return True
+
         gid = message.chat.id
         uid = message.from_user.id
         should_watch = add_watch_count(the_type, gid, uid)
