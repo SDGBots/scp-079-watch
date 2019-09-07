@@ -576,7 +576,7 @@ def is_watch_message(client: Client, message: Message) -> str:
             return "delete"
 
         # Forwarded message
-        if message.forward_from_chat:
+        if message.forward_from or message.forward_sender_name or message.forward_from_chat:
             return "delete"
 
         # Check the message's text
