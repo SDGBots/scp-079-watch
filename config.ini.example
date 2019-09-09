@@ -12,9 +12,6 @@ enabled = False
 hostname = 127.0.0.1
 port = 1080
 
-[basic]
-prefix = /!
-
 [bots]
 clean_id = [DATA EXPUNGED]
 captcha_id = [DATA EXPUNGED]

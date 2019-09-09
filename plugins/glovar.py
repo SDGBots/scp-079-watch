@@ -94,10 +94,6 @@ version: str = "0.0.5"
 
 # Read data from config.ini
 
-# [basic]
-prefix: List[str] = []
-prefix_str: str = "/!"
-
 # [bots]
 captcha_id: int = 0
 clean_id: int = 0
@@ -133,8 +129,6 @@ password: str = ""
 try:
     config = RawConfigParser()
     config.read("config.ini")
-    # [basic]
-    prefix = list(config["basic"].get("prefix", prefix_str))
     # [bots]
     captcha_id = int(config["bots"].get("captcha_id", captcha_id))
     clean_id = int(config["bots"].get("clean_id", clean_id))
@@ -170,8 +164,7 @@ except Exception as e:
     logger.warning(f"Read data from config.ini error: {e}", exc_info=True)
 
 # Check
-if (prefix == []
-        or captcha_id == 0
+if (captcha_id == 0
         or clean_id == 0
         or lang_id == 0
         or long_id == 0
