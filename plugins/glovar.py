@@ -67,7 +67,7 @@ names: dict = {
 receivers: Dict[str, List[str]] = {
     "version": ["HIDE"],
     "watch": ["ANALYZE", "CAPTCHA", "CLEAN", "LANG", "LONG",
-              "NOFLOOD", "NOPORN", "NOSPAM", "MANAGE", "RECHECK", "WATCH"]
+              "MANAGE", "NOFLOOD", "NOPORN", "NOSPAM", "RECHECK", "WATCH"]
 }
 
 regex: Dict[str, bool] = {
@@ -95,6 +95,7 @@ version: str = "0.0.5"
 # Read data from config.ini
 
 # [bots]
+avatar_id: int = 0
 captcha_id: int = 0
 clean_id: int = 0
 lang_id: int = 0
@@ -130,6 +131,7 @@ try:
     config = RawConfigParser()
     config.read("config.ini")
     # [bots]
+    avatar_id = int(config["bots"].get("avatar_id", avatar_id))
     captcha_id = int(config["bots"].get("captcha_id", captcha_id))
     clean_id = int(config["bots"].get("clean_id", clean_id))
     lang_id = int(config["bots"].get("lang_id", lang_id))
@@ -165,6 +167,7 @@ except Exception as e:
 
 # Check
 if (captcha_id == 0
+        or avatar_id == 0
         or clean_id == 0
         or lang_id == 0
         or long_id == 0
@@ -191,7 +194,7 @@ if (captcha_id == 0
     logger.critical("No proper settings")
     raise SystemExit("No proper settings")
 
-bot_ids: Set[int] = {captcha_id, clean_id, lang_id, long_id,
+bot_ids: Set[int] = {avatar_id, captcha_id, clean_id, lang_id, long_id,
                      noflood_id, noporn_id, nospam_id, recheck_id, tip_id, user_id, warn_id}
 
 # Load data from pickle
