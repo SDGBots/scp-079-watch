@@ -21,7 +21,7 @@ from typing import Iterable, List, Optional, Union
 
 from pyrogram import ChatMember, Client, InlineKeyboardMarkup, Message
 from pyrogram.api.functions.users import GetFullUser
-from pyrogram.api.types import UserFull, InputPeerUser, InputPeerChannel
+from pyrogram.api.types import InputPeerUser, InputPeerChannel, UserFull
 from pyrogram.errors import ChannelInvalid, ChannelPrivate, FloodWait, PeerIdInvalid
 from pyrogram.errors import UsernameInvalid, UsernameNotOccupied, UserNotParticipant
 
