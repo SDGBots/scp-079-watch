@@ -75,14 +75,17 @@ def check_join(client: Client, message: Message) -> bool:
     if glovar.locks["message"].acquire():
         try:
             for new in message.new_chat_members:
+                if new.is_bot:
+                    continue
+
                 # Work with NOSPAM
                 name = get_full_name(new)
                 if name and is_nm_text(name):
-                    return True
+                    continue
 
                 bio = get_user_bio(client, new.username or new.id)
                 if bio and is_bio_text(bio):
-                    return True
+                    continue
 
                 # Update user's join status
                 uid = new.id
