@@ -280,7 +280,7 @@ def is_exe(message: Message) -> bool:
 def is_lang_name(text: str) -> bool:
     # Check name's language
     try:
-        if get_lang(text) in glovar.lang_name:
+        if get_lang(text, glovar.lang_protect) in glovar.lang_name:
             return True
     except Exception as e:
         logger.warning(f"Is lang name error: {e}", exc_info=True)
@@ -291,7 +291,7 @@ def is_lang_name(text: str) -> bool:
 def is_lang_text(text: str) -> bool:
     # Check text's language
     try:
-        if get_lang(text) in glovar.lang_text:
+        if get_lang(text, glovar.lang_protect) in glovar.lang_text:
             return True
 
     except Exception as e:

@@ -115,6 +115,7 @@ watch_channel_id: int = 0
 # [custom]
 image_size: int = 0
 lang_name: Union[str, Set[str]] = ""
+lang_protect: Union[str, Set[str]] = ""
 lang_text: Union[str, Set[str]] = ""
 limit_ban: int = 0
 limit_delete: int = 0
@@ -150,6 +151,8 @@ try:
     image_size = int(config["custom"].get("image_size", image_size))
     lang_name = config["custom"].get("lang_name", lang_name)
     lang_name = set(lang_name.split())
+    lang_protect = config["custom"].get("lang_protect", lang_protect)
+    lang_protect = set(lang_protect.split())
     lang_text = config["custom"].get("lang_text", lang_text)
     lang_text = set(lang_text.split())
     limit_ban = int(config["custom"].get("limit_ban", limit_ban))
@@ -182,6 +185,7 @@ if (captcha_id == 0
         or watch_channel_id == 0
         or image_size == 0
         or lang_name in {"", "[DATA EXPUNGED]"} or lang_name == set()
+        or lang_protect in {"", "[DATA EXPUNGED]"} or lang_protect == set()
         or lang_text in {"", "[DATA EXPUNGED]"} or lang_text == set()
         or limit_ban == 0
         or limit_delete == 0

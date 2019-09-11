@@ -2,6 +2,7 @@ APScheduler==3.6.1
 asn1crypto==0.24.0
 cffi==1.12.3
 cryptography==2.7
+guess-language-spirit==0.5.3
 langdetect==1.0.7
 OpenCC==0.2
 Pillow==6.1.0

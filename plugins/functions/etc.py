@@ -20,14 +20,15 @@ import logging
 import re
 from hashlib import md5
 from html import escape
-from langdetect import detect
 from random import choice, uniform
 from string import ascii_letters, digits
 from threading import Thread, Timer
 from time import sleep, time
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from cryptography.fernet import Fernet
+from guess_language import guess_language
+from langdetect import detect
 from opencc import convert
 from pyrogram import InlineKeyboardMarkup, Message, MessageEntity, User
 from pyrogram.errors import FloodWait
@@ -218,12 +219,16 @@ def get_int(text: str) -> Optional[int]:
     return result
 
 
-def get_lang(text: str) -> str:
+def get_lang(text: str, protect: Set[str]) -> str:
     # Get text's language code
     result = ""
     try:
         if text:
             result = detect(text)
+            if result not in protect:
+                recheck = guess_language(text)
+                if recheck in protect:
+                    result = ""
     except Exception as e:
         logger.info(f"Get lang error: {e}", exc_info=True)
 
