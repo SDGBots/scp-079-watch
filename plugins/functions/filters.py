@@ -615,7 +615,7 @@ def is_watch_message(client: Client, message: Message) -> str:
         # Check sticker
         if sticker_title and sticker_title not in glovar.except_ids["long"]:
             if is_regex_text("wd", sticker_title):
-                return f"ban {sticker_title}"
+                return f"delete {sticker_title}"
 
         # Check preview
         if preview_text:

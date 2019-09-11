@@ -78,6 +78,7 @@ def terminate_user(client: Client, message: Message, the_type: str) -> bool:
             return True
 
         the_type_list = the_type.split()
+        the_type = the_type_list[0]
         if len(the_type_list) == 2:
             sticker_title = the_type_list[1]
         else:
