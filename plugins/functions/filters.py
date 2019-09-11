@@ -23,7 +23,7 @@ from pyrogram import Client, Filters, Message, WebPage
 
 from .. import glovar
 from .channel import get_content
-from .etc import get_channel_link, get_document_filename, get_entity_text, get_forward_name, get_lang, get_now
+from .etc import get_channel_link, get_entity_text, get_filename, get_forward_name, get_lang, get_now
 from .etc import get_links, get_stripped_link, get_text
 from .file import delete_file, get_downloaded_path, save
 from .ids import init_user_id
@@ -450,8 +450,8 @@ def is_watch_message(client: Client, message: Message) -> str:
             if is_wb_text(forward_name) or is_lang_text(forward_name):
                 return "ban"
 
-        # Check the document filename:
-        file_name = get_document_filename(message)
+        # Check the filename:
+        file_name = get_filename(message)
         if file_name:
             if is_ban_text(file_name):
                 return ""

@@ -134,7 +134,7 @@ def get_channel_link(message: Union[int, Message]) -> str:
     return text
 
 
-def get_document_filename(message: Message) -> str:
+def get_filename(message: Message) -> str:
     # Get document's filename
     text = ""
     try:
