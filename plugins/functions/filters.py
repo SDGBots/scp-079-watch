@@ -28,7 +28,7 @@ from .etc import get_links, get_stripped_link, get_text
 from .file import delete_file, get_downloaded_path, save
 from .ids import init_user_id
 from .image import get_color, get_file_id, get_ocr, get_qrcode
-from .telegram import get_chat_member, resolve_username
+from .telegram import get_chat_member, get_sticker_title, resolve_username
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -499,6 +499,19 @@ def is_watch_message(client: Client, message: Message) -> str:
                     if is_wb_text(all_text):
                         return "ban"
 
+        # Check sticker
+        sticker_title = ""
+        if message.sticker:
+            sticker_name = message.sticker.set_name
+            if sticker_name not in glovar.except_ids["long"]:
+                if is_regex_text("wb", sticker_name):
+                    return "ban"
+
+            if sticker_title not in glovar.except_ids["long"]:
+                sticker_title = get_sticker_title(client, sticker_name)
+                if is_regex_text("wb", sticker_title):
+                    return f"ban {sticker_title}"
+
         # Check preview
         preview_text = ""
         web_page: WebPage = message.web_page
@@ -598,6 +611,11 @@ def is_watch_message(client: Client, message: Message) -> str:
             color = get_color(image_path)
             if color:
                 return "delete"
+
+        # Check sticker
+        if sticker_title and sticker_title not in glovar.except_ids["long"]:
+            if is_regex_text("wd", sticker_title):
+                return f"ban {sticker_title}"
 
         # Check preview
         if preview_text:

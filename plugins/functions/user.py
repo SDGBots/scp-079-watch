@@ -77,11 +77,17 @@ def terminate_user(client: Client, message: Message, the_type: str) -> bool:
         if is_declared_message(None, message):
             return True
 
+        the_type_list = the_type.split()
+        if len(the_type_list) == 2:
+            sticker_title = the_type_list[1]
+        else:
+            sticker_title = None
+
         gid = message.chat.id
         uid = message.from_user.id
         should_watch = add_watch_count(the_type, gid, uid)
         if should_watch:
-            result = forward_evidence(client, message, glovar.names[the_type])
+            result = forward_evidence(client, message, glovar.names[the_type], sticker_title)
             if result:
                 add_watch_user(client, the_type, uid)
 
