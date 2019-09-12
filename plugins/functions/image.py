@@ -111,9 +111,9 @@ def get_ocr(path: str, test: bool = False) -> str:
 
         if result:
             if test:
-                result = re.sub(r"\n{2,}", "\n", result)
+                result = re.sub(r"\n{2,}", "\n", result, re.M)
 
-            result = re.sub(r"\s{2,}", " ", result)
+            result = re.sub(r"\s{2,}", " ", result, re.M)
             result = t2s(result)
     except Exception as e:
         logger.warning(f"Get OCR error: {e}", exc_info=True)
