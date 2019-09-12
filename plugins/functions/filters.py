@@ -503,14 +503,15 @@ def is_watch_message(client: Client, message: Message) -> str:
         sticker_title = ""
         if message.sticker:
             sticker_name = message.sticker.set_name
-            if sticker_name not in glovar.except_ids["long"]:
-                if is_regex_text("wb", sticker_name):
-                    return "ban"
+            if sticker_name:
+                if sticker_name not in glovar.except_ids["long"]:
+                    if is_regex_text("wb", sticker_name):
+                        return "ban"
 
-            if sticker_title not in glovar.except_ids["long"]:
-                sticker_title = get_sticker_title(client, sticker_name)
-                if is_regex_text("wb", sticker_title):
-                    return f"ban {sticker_title}"
+                if sticker_title not in glovar.except_ids["long"]:
+                    sticker_title = get_sticker_title(client, sticker_name)
+                    if is_regex_text("wb", sticker_title):
+                        return f"ban {sticker_title}"
 
         # Check preview
         preview_text = ""
