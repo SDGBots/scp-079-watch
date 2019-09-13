@@ -58,7 +58,7 @@ def backup_files(client: Client) -> bool:
 def interval_hour_01() -> bool:
     # Execute every hour
     try:
-        # Delete stickers and animations in groups
+        # Delete user data
         now = get_now()
         for uid in list(glovar.user_ids):
             if now - glovar.user_ids[uid]["join"] > glovar.time_new:
