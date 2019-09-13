@@ -72,12 +72,16 @@ def check(client: Client, message: Message) -> bool:
 
 
 @Client.on_message(Filters.incoming & Filters.group & from_user & Filters.new_chat_members
-                   & ~class_c & ~class_d)
+                   & ~class_c)
 def check_join(client: Client, message: Message) -> bool:
     # Check new joined user
     if glovar.locks["message"].acquire():
         try:
             for new in message.new_chat_members:
+                uid = new.id
+                if uid in glovar.bad_ids["users"]:
+                    continue
+
                 if new.is_bot:
                     continue
 
