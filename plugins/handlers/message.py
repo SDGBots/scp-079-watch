@@ -79,6 +79,8 @@ def check_join(client: Client, message: Message) -> bool:
         try:
             for new in message.new_chat_members:
                 uid = new.id
+
+                # Check if the user is Class D personnel
                 if uid in glovar.bad_ids["users"]:
                     continue
 
@@ -95,7 +97,6 @@ def check_join(client: Client, message: Message) -> bool:
                     continue
 
                 # Update user's join status
-                uid = new.id
                 if init_user_id(uid):
                     glovar.user_ids[uid]["join"] = get_now()
                     save("user_ids")
