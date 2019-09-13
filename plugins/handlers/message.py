@@ -84,6 +84,7 @@ def check_join(client: Client, message: Message) -> bool:
                 if uid in glovar.bad_ids["users"]:
                     continue
 
+                # Check if the user is bot
                 if new.is_bot:
                     continue
 
