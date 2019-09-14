@@ -65,7 +65,6 @@ names: dict = {
 }
 
 receivers: Dict[str, List[str]] = {
-    "version": ["HIDE"],
     "watch": ["ANALYZE", "CAPTCHA", "CLEAN", "LANG", "LONG",
               "MANAGE", "NOFLOOD", "NOPORN", "NOSPAM", "RECHECK", "WATCH"]
 }
