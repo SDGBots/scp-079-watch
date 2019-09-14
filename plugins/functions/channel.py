@@ -180,6 +180,7 @@ def share_data(client: Client, receivers: List[str], action: str, action_type: s
                 )
                 result = send_message(client, channel_id, text)
 
+            # Sending failed due to channel issue
             if result is False:
                 return True
 
