@@ -22,7 +22,7 @@ from pyrogram import Client, Filters, Message
 
 from .. import glovar
 from ..functions.channel import get_content
-from ..functions.etc import get_full_name, get_now
+from ..functions.etc import get_full_name, get_now, thread
 from ..functions.file import save
 from ..functions.filters import class_c, class_d, class_e, declared_message, from_user, hide_channel, is_bio_text
 from ..functions.filters import is_nm_text, is_declared_message, is_watch_message, is_watch_user, new_user, watch_ban
@@ -32,7 +32,7 @@ from ..functions.receive import receive_regex, receive_remove_bad, receive_remov
 from ..functions.receive import receive_status_ask, receive_text_data, receive_version_ask, receive_watch_user
 from ..functions.timers import send_count
 from ..functions.user import terminate_user
-from ..functions.telegram import get_user_bio
+from ..functions.telegram import get_user_bio, read_history
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -107,6 +107,21 @@ def check_join(client: Client, message: Message) -> bool:
             logger.warning(f"Check join error: {e}", exc_info=True)
         finally:
             glovar.locks["message"].release()
+
+    return False
+
+
+@Client.on_message(Filters.incoming & Filters.channel & hide_channel, group=2)
+def mark_message(client: Client, message: Message) -> bool:
+    # Mark messages from groups and channels as read
+    try:
+        if message.chat:
+            cid = message.chat.id
+            thread(read_history, (client, cid))
+
+        return True
+    except Exception as e:
+        logger.warning(f"Mark message error: {e}", exc_info=True)
 
     return False
 
