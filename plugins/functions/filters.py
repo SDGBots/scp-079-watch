@@ -371,7 +371,9 @@ def is_tgl(client: Client, message: Message) -> bool:
 
         # Check text
         text = get_text(message)
-        text = text.replace(bypass, "")
+        for bypass in bypass_list:
+            text = text.replace(bypass, "")
+
         if is_regex_text("tgl", text):
             return True
 
