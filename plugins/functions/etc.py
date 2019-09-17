@@ -222,15 +222,24 @@ def get_int(text: str) -> Optional[int]:
 def get_lang(text: str, protect: Set[str]) -> str:
     # Get text's language code
     result = ""
+    recheck = ""
     try:
         if text:
-            result = detect(text)
-            if result not in protect:
-                recheck = guess_language(text)
-                if recheck in protect:
+            try:
+                result = detect(text)
+                if result and result not in protect:
+                    recheck = guess_language(text)
+                    if recheck and recheck in protect:
+                        result = ""
+            except Exception as e:
+                logger.info(f"First try error: {e}", exc_info=True)
+
+            if not recheck:
+                result = guess_language(text)
+                if result and (result == "UNKNOWN" or result in protect):
                     result = ""
     except Exception as e:
-        logger.info(f"Get lang error: {e}", exc_info=True)
+        logger.warning(f"Get lang error: {e}", exc_info=True)
 
     return result
 
