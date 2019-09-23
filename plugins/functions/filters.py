@@ -472,8 +472,8 @@ def is_watch_message(client: Client, message: Message) -> str:
         # Check image
         ocr = ""
         all_text = ""
-        file_id, big = get_file_id(message)
-        image_path = get_downloaded_path(client, file_id)
+        file_id, file_ref, big = get_file_id(message)
+        image_path = get_downloaded_path(client, file_id, file_ref)
         if is_declared_message(None, message):
             return ""
         elif image_path:
@@ -539,7 +539,8 @@ def is_watch_message(client: Client, message: Message) -> str:
             if web_page.photo:
                 if web_page.photo.file_size <= glovar.image_size:
                     file_id = web_page.photo.file_id
-                    image_path = get_downloaded_path(client, file_id)
+                    file_ref = web_page.photo.file_ref
+                    image_path = get_downloaded_path(client, file_id, file_ref)
                     if image_path:
                         need_delete.append(image_path)
                         qrcode = get_qrcode(image_path)
