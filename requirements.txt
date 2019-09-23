@@ -4,6 +4,8 @@ cffi==1.12.3
 cryptography==2.7
 guess-language-spirit==0.5.3
 langdetect==1.0.7
+langid==1.1.6
+numpy==1.17.2
 OpenCC==0.2
 Pillow==6.1.0
 pyaes==1.6.1
