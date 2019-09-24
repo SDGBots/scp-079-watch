@@ -37,7 +37,7 @@ def add_watch_count(the_type: str, gid: int, uid: int) -> bool:
     try:
         if init_user_id(uid):
             glovar.user_ids[uid][the_type].add(gid)
-            if len(glovar.user_ids[uid][the_type]) >= eval(f"glovar.limit_{the_type}"):
+            if len(glovar.user_ids[uid][the_type]) == eval(f"glovar.limit_{the_type}"):
                 glovar.user_ids[uid]["type"] = the_type
                 glovar.user_ids[uid][the_type] = set()
                 if the_type == "ban":
