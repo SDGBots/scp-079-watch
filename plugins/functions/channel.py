@@ -212,7 +212,7 @@ def share_regex_count(client: Client, word_type: str) -> bool:
     return False
 
 
-def share_watch_user(client: Client, the_type: str, uid: int, until: str) -> bool:
+def share_watch_user(client: Client, the_type: str, uid: int, until: str, mid: int) -> bool:
     # Share a watch ban user with other bots
     try:
         share_data(
@@ -223,7 +223,8 @@ def share_watch_user(client: Client, the_type: str, uid: int, until: str) -> boo
             data={
                 "id": uid,
                 "type": the_type,
-                "until": until
+                "until": until,
+                "message_id": mid
             }
         )
 

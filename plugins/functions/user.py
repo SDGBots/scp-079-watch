@@ -36,23 +36,24 @@ def add_watch_count(the_type: str, gid: int, uid: int) -> bool:
     result = False
     try:
         if init_user_id(uid):
-            glovar.user_ids[uid][the_type].add(gid)
-            if len(glovar.user_ids[uid][the_type]) == eval(f"glovar.limit_{the_type}"):
-                glovar.user_ids[uid]["type"] = the_type
-                glovar.user_ids[uid][the_type] = set()
-                if the_type == "ban":
-                    glovar.user_ids[uid]["delete"] = set()
+            if gid not in glovar.user_ids[uid][the_type]:
+                glovar.user_ids[uid][the_type].add(gid)
+                if len(glovar.user_ids[uid][the_type]) == eval(f"glovar.limit_{the_type}"):
+                    glovar.user_ids[uid]["type"] = the_type
+                    glovar.user_ids[uid][the_type] = set()
+                    if the_type == "ban":
+                        glovar.user_ids[uid]["delete"] = set()
 
-                result = True
+                    result = True
 
-            save("user_ids")
+                save("user_ids")
     except Exception as e:
         logger.warning(f"Add watch count error: {e}", exc_info=True)
 
     return result
 
 
-def add_watch_user(client: Client, the_type: str, uid: int) -> bool:
+def add_watch_user(client: Client, the_type: str, uid: int, mid: int) -> bool:
     # Add a watch ban user, share it
     try:
         now = get_now()
@@ -61,7 +62,7 @@ def add_watch_user(client: Client, the_type: str, uid: int) -> bool:
         glovar.user_ids[uid]["until"] = until
         until = str(until)
         until = crypt_str("encrypt", until, glovar.key)
-        share_watch_user(client, the_type, uid, until)
+        share_watch_user(client, the_type, uid, until, mid)
         save("user_ids")
 
         return True
@@ -90,7 +91,7 @@ def terminate_user(client: Client, message: Message, the_type: str) -> bool:
         if should_watch:
             result = forward_evidence(client, message, glovar.names[the_type], sticker_title)
             if result:
-                add_watch_user(client, the_type, uid)
+                add_watch_user(client, the_type, uid, result.message_id)
 
         return True
     except Exception as e:
