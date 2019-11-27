@@ -25,12 +25,14 @@ from ..functions.channel import get_content
 from ..functions.etc import get_full_name, get_now, thread
 from ..functions.file import save
 from ..functions.filters import class_c, class_d, class_e, declared_message, from_user, hide_channel, is_bio_text
-from ..functions.filters import is_nm_text, is_declared_message, is_watch_message, is_watch_user, new_user, watch_ban
+from ..functions.filters import is_nm_text, is_declared_message, is_lang, is_watch_message, is_watch_user
+from ..functions.filters import new_user, watch_ban
 from ..functions.ids import init_user_id
-from ..functions.receive import receive_add_bad, receive_add_except, receive_declared_message
+from ..functions.receive import receive_add_bad, receive_add_except, receive_clear_data, receive_declared_message
 from ..functions.receive import receive_regex, receive_remove_bad, receive_remove_except, receive_remove_watch
-from ..functions.receive import receive_status_ask, receive_text_data, receive_version_ask, receive_watch_user
-from ..functions.timers import send_count
+from ..functions.receive import receive_rollback, receive_status_ask, receive_text_data
+from ..functions.receive import receive_version_ask, receive_watch_user
+from ..functions.timers import backup_files, send_count
 from ..functions.user import terminate_user
 from ..functions.telegram import get_user_bio, read_history
 
@@ -38,86 +40,109 @@ from ..functions.telegram import get_user_bio, read_history
 logger = logging.getLogger(__name__)
 
 
-@Client.on_message(Filters.incoming & Filters.group & from_user & ~Filters.service & ~watch_ban & new_user
-                   & ~class_c & ~class_d & ~class_e & ~declared_message)
+@Client.on_message(Filters.incoming & Filters.group & ~Filters.service
+                   & from_user & ~class_c & ~class_d & ~class_e & new_user & ~watch_ban
+                   & ~declared_message)
 def check(client: Client, message: Message) -> bool:
     # Check the messages sent from groups
-    if glovar.locks["message"].acquire():
-        try:
-            # Check declare status
-            if is_declared_message(None, message):
-                return True
 
-            # Do not track again
-            if is_watch_user(message, "ban"):
-                return True
+    has_text = bool(message and (message.text or message.caption))
 
-            # Watch message
-            content = get_content(message)
-            detection = is_watch_message(client, message)
-            if detection:
+    if has_text:
+        glovar.locks["text"].acquire()
+    else:
+        glovar.locks["message"].acquire()
+
+    try:
+        # Check declare status
+        if is_declared_message(None, message):
+            return True
+
+        # Do not track again
+        if is_watch_user(message.from_user, "ban"):
+            return True
+
+        # Watch message
+        content = get_content(message)
+        detection = is_watch_message(client, message)
+        if detection:
+            result = terminate_user(client, message, detection)
+            if result:
                 glovar.contents[content] = detection
-                return terminate_user(client, message, detection)
-            elif message.sticker:
+        elif message.sticker:
+            if content:
                 glovar.except_ids["temp"].add(content)
                 save("except_ids")
 
-            return True
-        except Exception as e:
-            logger.warning(f"Check error: {e}", exc_info=True)
-        finally:
+        return True
+    except Exception as e:
+        logger.warning(f"Check error: {e}", exc_info=True)
+    finally:
+        if has_text:
+            glovar.locks["text"].release()
+        else:
             glovar.locks["message"].release()
 
     return False
 
 
-@Client.on_message(Filters.incoming & Filters.group & from_user & Filters.new_chat_members
-                   & ~class_c)
+@Client.on_message(Filters.incoming & Filters.group & Filters.new_chat_members
+                   & from_user & ~class_c)
 def check_join(client: Client, message: Message) -> bool:
     # Check new joined user
-    if glovar.locks["message"].acquire():
-        try:
-            for new in message.new_chat_members:
-                uid = new.id
+    glovar.locks["message"].acquire()
+    try:
+        # Basic data
+        gid = message.chat.id
+        now = message.date or get_now()
 
-                # Check if the user is Class D personnel
-                if uid in glovar.bad_ids["users"]:
-                    continue
+        for new in message.new_chat_members:
+            # Basic data
+            uid = new.id
 
-                # Check if the user is bot
-                if new.is_bot:
-                    continue
+            # Check if the user is Class D personnel
+            if uid in glovar.bad_ids["users"]:
+                continue
 
-                # Work with NOSPAM
-                name = get_full_name(new)
-                if name and is_nm_text(name):
-                    continue
+            # Check if the user is bot
+            if new.is_bot:
+                continue
 
-                bio = get_user_bio(client, new.username or new.id)
-                if bio and is_bio_text(bio):
-                    continue
+            # Work with NOSPAM and LANG
+            name = get_full_name(new)
+            if name and (is_nm_text(name) or is_lang("name", name)):
+                continue
 
-                # Update user's join status
-                if init_user_id(uid):
-                    glovar.user_ids[uid]["join"] = get_now()
-                    save("user_ids")
+            bio = get_user_bio(client, uid, True)
+            if bio and (is_bio_text(bio) or is_lang("bio", bio)):
+                continue
 
-            return True
-        except Exception as e:
-            logger.warning(f"Check join error: {e}", exc_info=True)
-        finally:
-            glovar.locks["message"].release()
+            # Init the user's status
+            if not init_user_id(uid):
+                continue
+
+            # Update the user's join status
+            glovar.user_ids[uid]["join"][gid] = now
+            save("user_ids")
+
+        return True
+    except Exception as e:
+        logger.warning(f"Check join error: {e}", exc_info=True)
+    finally:
+        glovar.locks["message"].release()
 
     return False
 
 
-@Client.on_message(Filters.incoming & Filters.channel & hide_channel, group=2)
+@Client.on_message(Filters.incoming & ~Filters.private, group=2)
 def mark_message(client: Client, message: Message) -> bool:
-    # Mark messages from groups and channels as read
+    # Mark messages as read
     try:
-        if message.chat:
-            cid = message.chat.id
-            thread(read_history, (client, cid))
+        if not message.chat:
+            return True
+
+        cid = message.chat.id
+        thread(read_history, (client, cid))
 
         return True
     except Exception as e:
@@ -126,147 +151,161 @@ def mark_message(client: Client, message: Message) -> bool:
     return False
 
 
-@Client.on_message(Filters.incoming & Filters.channel & hide_channel)
+@Client.on_message(Filters.incoming & Filters.channel
+                   & hide_channel)
 def process_data(client: Client, message: Message) -> bool:
     # Process the data in exchange channel
     try:
         data = receive_text_data(message)
-        if data:
-            sender = data["from"]
-            receivers = data["to"]
-            action = data["action"]
-            action_type = data["type"]
-            data = data["data"]
-            # This will look awkward,
-            # seems like it can be simplified,
-            # but this is to ensure that the permissions are clear,
-            # so it is intentionally written like this
-            if glovar.sender in receivers:
 
-                if sender == "CLEAN":
+        if not data:
+            return True
 
-                    if action == "add":
-                        if action_type == "bad":
-                            receive_add_bad(sender, data)
-                        elif action_type == "watch":
-                            receive_watch_user(data)
+        sender = data["from"]
+        receivers = data["to"]
+        action = data["action"]
+        action_type = data["type"]
+        data = data["data"]
 
-                    elif action == "update":
-                        if action_type == "declare":
-                            receive_declared_message(data)
+        # This will look awkward,
+        # seems like it can be simplified,
+        # but this is to ensure that the permissions are clear,
+        # so it is intentionally written like this
+        if glovar.sender in receivers:
 
-                elif sender == "HIDE":
+            if sender == "CAPTCHA":
 
-                    if action == "version":
-                        if action_type == "ask":
-                            receive_version_ask(client, data)
+                if action == "update":
+                    if action_type == "declare":
+                        receive_declared_message(data)
 
-                elif sender == "LANG":
+            if sender == "CLEAN":
 
-                    if action == "add":
-                        if action_type == "bad":
-                            receive_add_bad(sender, data)
-                        elif action_type == "watch":
-                            receive_watch_user(data)
+                if action == "add":
+                    if action_type == "bad":
+                        receive_add_bad(sender, data)
+                    elif action_type == "watch":
+                        receive_watch_user(data)
 
-                    elif action == "update":
-                        if action_type == "declare":
-                            receive_declared_message(data)
+                elif action == "update":
+                    if action_type == "declare":
+                        receive_declared_message(data)
 
-                elif sender == "LONG":
+            elif sender == "HIDE":
 
-                    if action == "add":
-                        if action_type == "bad":
-                            receive_add_bad(sender, data)
-                        elif action_type == "watch":
-                            receive_watch_user(data)
+                if action == "version":
+                    if action_type == "ask":
+                        receive_version_ask(client, data)
 
-                    elif action == "update":
-                        if action_type == "declare":
-                            receive_declared_message(data)
+            elif sender == "LANG":
 
-                elif sender == "MANAGE":
+                if action == "add":
+                    if action_type == "bad":
+                        receive_add_bad(sender, data)
+                    elif action_type == "watch":
+                        receive_watch_user(data)
 
-                    if action == "add":
-                        if action_type == "bad":
-                            receive_add_bad(sender, data)
-                        elif action_type == "except":
-                            receive_add_except(client, data)
+                elif action == "update":
+                    if action_type == "declare":
+                        receive_declared_message(data)
 
-                    elif action == "remove":
-                        if action_type == "bad":
-                            receive_remove_bad(sender, data)
-                        elif action_type == "except":
-                            receive_remove_except(client, data)
-                        elif action_type == "watch":
-                            receive_remove_watch(data)
+            elif sender == "LONG":
 
-                    elif action == "status":
-                        if action_type == "ask":
-                            receive_status_ask(client, data)
+                if action == "add":
+                    if action_type == "bad":
+                        receive_add_bad(sender, data)
+                    elif action_type == "watch":
+                        receive_watch_user(data)
 
-                elif sender == "NOFLOOD":
+                elif action == "update":
+                    if action_type == "declare":
+                        receive_declared_message(data)
 
-                    if action == "add":
-                        if action_type == "bad":
-                            receive_add_bad(sender, data)
-                        elif action_type == "watch":
-                            receive_watch_user(data)
+            elif sender == "MANAGE":
 
-                    elif action == "update":
-                        if action_type == "declare":
-                            receive_declared_message(data)
+                if action == "add":
+                    if action_type == "bad":
+                        receive_add_bad(sender, data)
+                    elif action_type == "except":
+                        receive_add_except(client, data)
 
-                elif sender == "NOPORN":
+                elif action == "backup":
+                    if action_type == "now":
+                        thread(backup_files, (client,))
+                    elif action_type == "rollback":
+                        receive_rollback(client, message, data)
 
-                    if action == "add":
-                        if action_type == "bad":
-                            receive_add_bad(sender, data)
-                        elif action_type == "watch":
-                            receive_watch_user(data)
+                elif action == "clear":
+                    receive_clear_data(client, action_type, data)
 
-                    elif action == "update":
-                        if action_type == "declare":
-                            receive_declared_message(data)
+                elif action == "remove":
+                    if action_type == "bad":
+                        receive_remove_bad(data)
+                    elif action_type == "except":
+                        receive_remove_except(client, data)
+                    elif action_type == "watch":
+                        receive_remove_watch(data)
 
-                elif sender == "NOSPAM":
+                elif action == "status":
+                    if action_type == "ask":
+                        receive_status_ask(client, data)
 
-                    if action == "add":
-                        if action_type == "bad":
-                            receive_add_bad(sender, data)
-                        elif action_type == "watch":
-                            receive_watch_user(data)
+            elif sender == "NOFLOOD":
 
-                    elif action == "update":
-                        if action_type == "declare":
-                            receive_declared_message(data)
+                if action == "add":
+                    if action_type == "bad":
+                        receive_add_bad(sender, data)
+                    elif action_type == "watch":
+                        receive_watch_user(data)
 
-                elif sender == "RECHECK":
+                elif action == "update":
+                    if action_type == "declare":
+                        receive_declared_message(data)
 
-                    if action == "add":
-                        if action_type == "bad":
-                            receive_add_bad(sender, data)
-                        elif action_type == "watch":
-                            receive_watch_user(data)
+            elif sender == "NOPORN":
 
-                    elif action == "update":
-                        if action_type == "declare":
-                            receive_declared_message(data)
+                if action == "add":
+                    if action_type == "bad":
+                        receive_add_bad(sender, data)
+                    elif action_type == "watch":
+                        receive_watch_user(data)
 
-                elif sender == "REGEX":
+                elif action == "update":
+                    if action_type == "declare":
+                        receive_declared_message(data)
 
-                    if action == "regex":
-                        if action_type == "update":
-                            receive_regex(client, message, data)
-                        elif action_type == "count":
-                            if data == "ask":
-                                send_count(client)
+            elif sender == "NOSPAM":
 
-                elif sender == "USER":
+                if action == "add":
+                    if action_type == "bad":
+                        receive_add_bad(sender, data)
+                    elif action_type == "watch":
+                        receive_watch_user(data)
 
-                    if action == "remove":
-                        if action_type == "bad":
-                            receive_remove_bad(sender, data)
+                elif action == "update":
+                    if action_type == "declare":
+                        receive_declared_message(data)
+
+            elif sender == "RECHECK":
+
+                if action == "add":
+                    if action_type == "bad":
+                        receive_add_bad(sender, data)
+                    elif action_type == "watch":
+                        receive_watch_user(data)
+
+                elif action == "update":
+                    if action_type == "declare":
+                        receive_declared_message(data)
+
+            elif sender == "REGEX":
+
+                if action == "regex":
+                    if action_type == "update":
+                        receive_regex(client, message, data)
+                    elif action_type == "count":
+                        if data == "ask":
+                            send_count(client)
 
         return True
     except Exception as e:
