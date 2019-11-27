@@ -625,10 +625,6 @@ def is_watch_message(client: Client, message: Message) -> str:
 
         # Start detect watch ban
 
-        # Check if the user already recorded in this group
-        if gid in glovar.user_ids[uid]["ban"]:
-            return ""
-
         # Check detected records
         message_content = get_content(message)
         if message_content:
@@ -825,10 +821,6 @@ def is_watch_message(client: Client, message: Message) -> str:
 
         # Check if the user is already in watch delete
         if is_watch_delete(None, message):
-            return ""
-
-        # Check if the user already recorded in this group
-        if gid in glovar.user_ids[uid]["delete"]:
             return ""
 
         # Check detected records

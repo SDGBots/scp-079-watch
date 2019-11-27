@@ -250,8 +250,8 @@ lang: Dict[str, str] = {
     "new_user": (zh_cn and "新用户") or "New User",
     "suggest_ban": (zh_cn and "建议封禁") or "Suggest Ban",
     "suggest_delete": (zh_cn and "建议删除") or "Suggest Delete",
-    "track_ban": (zh_cn and "观察封禁") or "Track Ban",
-    "track_delete": (zh_cn and "观察删除") or "Track Delete",
+    "track_ban": (zh_cn and "封禁观察") or "Ban Track",
+    "track_delete": (zh_cn and "删除观察") or "Delete Track",
     # Terminate
     "auto_ban": (zh_cn and "自动封禁") or "Auto Ban",
     "auto_delete": (zh_cn and "自动删除") or "Auto Delete",
