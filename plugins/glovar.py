@@ -341,7 +341,7 @@ usernames: Dict[str, Dict[str, Union[int, str]]] = {}
 #     }
 # }
 
-version: str = "0.0.8"
+version: str = "0.0.9"
 
 # Load data from pickle
 
@@ -377,7 +377,7 @@ except_ids: Dict[str, Set[Union[int, str]]] = {
 #     "temp": {"content"}
 # }
 
-user_ids: Dict[int, Dict[str, Union[int, str, Set[int]]]] = {}
+user_ids: Dict[int, Dict[str, Union[int, str, Dict[int, int]]]] = {}
 # user_ids = {
 #     12345678: {
 #         "join": 0,
