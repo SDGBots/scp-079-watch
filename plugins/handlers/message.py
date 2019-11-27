@@ -122,7 +122,7 @@ def check_join(client: Client, message: Message) -> bool:
                 continue
 
             # Update the user's join status
-            glovar.user_ids[uid]["join"][gid] = now
+            glovar.user_ids[uid]["join"] = now
             save("user_ids")
 
         return True
