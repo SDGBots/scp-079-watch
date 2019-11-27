@@ -76,8 +76,8 @@ project_link: str = ""
 project_name: str = ""
 time_ban: int = 0
 time_delete: int = 0
-time_new: int = 0
 time_forgive: int = 0
+time_new: int = 0
 zh_cn: Union[bool, str] = ""
 
 # [emoji]
@@ -136,8 +136,8 @@ try:
     project_name = config["custom"].get("project_name", project_name)
     time_ban = int(config["custom"].get("time_ban", time_ban))
     time_delete = int(config["custom"].get("time_delete", time_delete))
-    time_new = int(config["custom"].get("time_new", time_new))
     time_forgive = int(config["custom"].get("time_forgive", time_forgive))
+    time_new = int(config["custom"].get("time_new", time_new))
     zh_cn = config["custom"].get("zh_cn", zh_cn)
     zh_cn = eval(zh_cn)
     # [emoji]
@@ -154,9 +154,51 @@ try:
 except Exception as e:
     logger.warning(f"Read data from config.ini error: {e}", exc_info=True)
 
+print(avatar_id == 0)
+print(captcha_id == 0)
+print(clean_id == 0)
+print(lang_id == 0)
+print(long_id == 0)
+print(noflood_id == 0)
+print(noporn_id == 0)
+print(nospam_id == 0)
+print(recheck_id == 0)
+print(tip_id == 0)
+print(user_id == 0)
+print(warn_id == 0)
+print(debug_channel_id == 0)
+print(hide_channel_id == 0)
+print(watch_channel_id == 0)
+print(backup not in {False, True})
+print(date_reset in {"", "[DATA EXPUNGED]"})
+print(image_size == 0)
+print(invalid in {"", "[DATA EXPUNGED]"} or invalid == set())
+print(lang_bio in {"", "[DATA EXPUNGED]"} or lang_bio == set())
+print(lang_name in {"", "[DATA EXPUNGED]"} or lang_name == set())
+print(lang_protect in {"", "[DATA EXPUNGED]"} or lang_protect == set())
+print(lang_sticker in {"", "[DATA EXPUNGED]"} or lang_sticker == set())
+print(lang_text in {"", "[DATA EXPUNGED]"} or lang_text == set())
+print(limit_ban == 0)
+print(limit_delete == 0)
+print(project_link in {"", "[DATA EXPUNGED]"})
+print(project_name in {"", "[DATA EXPUNGED]"})
+print(time_ban == 0)
+print(time_delete == 0)
+print(time_forgive == 0)
+print(time_new == 0)
+print(zh_cn not in {False, True})
+print(emoji_ad_single == 0)
+print(emoji_ad_total == 0)
+print(emoji_many == 0)
+print(emoji_protect in {"", "[DATA EXPUNGED]"})
+print(emoji_wb_single == 0)
+print(emoji_wb_total == 0)
+print(key in {b"", b"[DATA EXPUNGED]", "", "[DATA EXPUNGED]"})
+print(password in {"", "[DATA EXPUNGED]"})
+
 # Check
-if (captcha_id == 0
-        or avatar_id == 0
+if (avatar_id == 0
+        or captcha_id == 0
         or clean_id == 0
         or lang_id == 0
         or long_id == 0
@@ -185,8 +227,8 @@ if (captcha_id == 0
         or project_name in {"", "[DATA EXPUNGED]"}
         or time_ban == 0
         or time_delete == 0
-        or time_new == 0
         or time_forgive == 0
+        or time_new == 0
         or zh_cn not in {False, True}
         or emoji_ad_single == 0
         or emoji_ad_total == 0
