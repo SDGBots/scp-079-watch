@@ -22,9 +22,9 @@ from pyrogram import Client, Message
 
 from .. import glovar
 from .channel import forward_evidence, share_watch_user
-from .etc import crypt_str, get_now
+from .etc import crypt_str, get_now, lang
 from .file import save
-from .filters import is_declared_message
+from .filters import is_class_d, is_declared_message
 from .ids import init_user_id
 
 # Enable logging
@@ -33,36 +33,51 @@ logger = logging.getLogger(__name__)
 
 def add_watch_count(the_type: str, gid: int, uid: int) -> bool:
     # Change a user's watch count
-    result = False
     try:
-        if init_user_id(uid):
-            if gid not in glovar.user_ids[uid][the_type]:
-                glovar.user_ids[uid][the_type].add(gid)
-                if len(glovar.user_ids[uid][the_type]) == eval(f"glovar.limit_{the_type}"):
-                    glovar.user_ids[uid]["type"] = the_type
-                    glovar.user_ids[uid][the_type] = set()
-                    if the_type == "ban":
-                        glovar.user_ids[uid]["delete"] = set()
+        # Basic data
+        now = get_now()
 
-                    result = True
+        if not init_user_id(uid):
+            return False
 
-                save("user_ids")
+        glovar.user_ids[uid][the_type][gid] = now
+
+        if len(glovar.user_ids[uid][the_type]) != eval(f"glovar.limit_{the_type}"):
+            save("user_ids")
+            return False
+
+        glovar.user_ids[uid]["type"] = the_type
+        glovar.user_ids[uid][the_type] = {}
+
+        if the_type == "ban":
+            glovar.user_ids[uid]["delete"] = {}
+
+        save("user_ids")
+
+        return True
     except Exception as e:
         logger.warning(f"Add watch count error: {e}", exc_info=True)
 
-    return result
+    return False
 
 
 def add_watch_user(client: Client, the_type: str, uid: int, mid: int) -> bool:
     # Add a watch ban user, share it
     try:
+        # Basic data
         now = get_now()
         until = now + glovar.time_ban
+
+        # Add locally
         glovar.user_ids[uid]["type"] = the_type
         glovar.user_ids[uid]["until"] = until
+
+        # Share the user
         until = str(until)
         until = crypt_str("encrypt", until, glovar.key)
         share_watch_user(client, the_type, uid, until, mid)
+
+        # Store the data
         save("user_ids")
 
         return True
@@ -75,23 +90,33 @@ def add_watch_user(client: Client, the_type: str, uid: int, mid: int) -> bool:
 def terminate_user(client: Client, message: Message, the_type: str) -> bool:
     # Add user to watch list
     try:
-        if is_declared_message(None, message):
-            return True
+        # Check if it is necessary
+        if is_class_d(None, message) or is_declared_message(None, message):
+            return False
 
+        gid = message.chat.id
+        uid = message.from_user.id
         the_type_list = the_type.split()
         the_type = the_type_list[0]
+
         if len(the_type_list) == 2:
             sticker_title = the_type_list[1]
         else:
             sticker_title = None
 
-        gid = message.chat.id
-        uid = message.from_user.id
         should_watch = add_watch_count(the_type, gid, uid)
-        if should_watch:
-            result = forward_evidence(client, message, glovar.names[the_type], sticker_title)
-            if result:
-                add_watch_user(client, the_type, uid, result.message_id)
+
+        if not should_watch:
+            return True
+
+        result = forward_evidence(
+            client=client,
+            message=message,
+            level=lang(the_type),
+            more=sticker_title
+        )
+        if result:
+            add_watch_user(client, the_type, uid, result.message_id)
 
         return True
     except Exception as e:
