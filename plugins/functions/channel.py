@@ -24,7 +24,7 @@ from pyrogram import Client, Message
 from pyrogram.errors import FloodWait
 
 from .. import glovar
-from .etc import code, code_block, get_forward_name, get_md5sum, get_text, thread, wait_flood
+from .etc import code, code_block, get_forward_name, get_md5sum, get_text, lang, thread, wait_flood
 from .file import crypt_file, data_to_file, delete_file, get_new_path
 from .image import get_file_id
 from .telegram import send_document, send_message
@@ -57,30 +57,37 @@ def forward_evidence(client: Client, message: Message, level: str,
     # Forward the message to the watch channel as evidence
     result = None
     try:
+        # Basic information
         uid = message.from_user.id
-        text = (f"项目编号：{code(glovar.sender)}\n"
-                f"用户 ID：{code(uid)}\n"
-                f"操作等级：{code(level)}\n"
-                f"规则：{code('全局规则')}\n")
+        text = (f"{lang('project')}{lang('colon')}{code(glovar.sender)}\n"
+                f"{lang('user_id')}{lang('colon')}{code(uid)}\n"
+                f"{lang('level')}{lang('colon')}{code(level)}\n"
+                f"{lang('rule')}{lang('colon')}{code('rule_global')}\n")
+
+        # Additional information
+        if message.game:
+            text += f"{lang('message_type')}{lang('colon')}{code(lang('gam'))}\n"
+        elif message.service:
+            text += f"{lang('message_type')}{lang('colon')}{code(lang('ser'))}\n"
 
         if message.game:
-            text += f"消息类别：{code('游戏')}\n"
-        elif message.service:
-            text += f"消息类别：{code('服务消息')}\n"
+            text += f"{lang('message_game')}{lang('colon')}{code(message.game.short_name)}\n"
 
         forward_name = get_forward_name(message)
         if forward_name:
-            text += f"来源名称：{code(forward_name)}\n"
+            text += f"{lang('from_name')}{lang('colon')}{code(forward_name)}\n"
 
+        # Extra information
         if message.contact or message.location or message.venue or message.video_note or message.voice:
-            text += f"附加信息：{code('可能涉及隐私而未转发')}\n"
+            text += f"{lang('more')}{lang('colon')}{code(lang('privacy'))}\n"
         elif message.game or message.service:
-            text += f"附加信息：{code('此类消息无法转发至频道')}\n"
+            text += f"{lang('more')}{lang('colon')}{code(lang('cannot_forward'))}\n"
         elif more:
-            text += f"附加信息：{code(more)}\n"
+            text += f"{lang('more')}{lang('colon')}{code(more)}\n"
 
         # DO NOT try to forward these types of message
-        if (message.contact or message.location
+        if (message.contact
+                or message.location
                 or message.venue
                 or message.video_note
                 or message.voice
@@ -116,73 +123,58 @@ def get_content(message: Message) -> str:
     # Get the message that will be added to lists, return the file_id and text's hash
     result = ""
     try:
-        if message:
-            file_id, _, _ = get_file_id(message)
-            text = get_text(message)
-            if file_id:
-                result += file_id
+        if not message:
+            return ""
 
-            if message.audio:
-                result += message.audio.file_id
+        file_id, _, _ = get_file_id(message)
+        text = get_text(message)
 
-            if message.document:
-                result += message.document.file_id
+        if file_id:
+            result += file_id
 
-            if message.sticker and message.sticker.is_animated:
-                result += message.sticker.file_id
+        if message.audio:
+            result += message.audio.file_id
 
-            if text:
-                result += get_md5sum("string", text)
+        if message.document:
+            result += message.document.file_id
+
+        if message.sticker and message.sticker.is_animated:
+            result += message.sticker.file_id
+
+        if text:
+            result += get_md5sum("string", text)
     except Exception as e:
         logger.warning(f"Get content error: {e}", exc_info=True)
 
     return result
 
 
-def share_data(client: Client, receivers: List[str], action: str, action_type: str, data: Union[bool, dict, int, str],
-               file: str = None, encrypt: bool = True) -> bool:
-    # Use this function to share data in the hide channel
+def send_help(client: Client, cid: int, text: str) -> bool:
+    # Request HIDE to help to send a text in the channel
     try:
-        if glovar.sender in receivers:
-            receivers.remove(glovar.sender)
+        file = data_to_file(text)
+        share_data(
+            client=client,
+            receivers=["HIDE"],
+            action="help",
+            action_type="send",
+            data=cid,
+            file=file
+        )
+    except Exception as e:
+        logger.warning(f"Send help error: {e}", exc_info=True)
 
-        if receivers:
-            channel_id = glovar.hide_channel_id
-            if file:
-                text = format_data(
-                    sender=glovar.sender,
-                    receivers=receivers,
-                    action=action,
-                    action_type=action_type,
-                    data=data
-                )
-                if encrypt:
-                    # Encrypt the file, save to the tmp directory
-                    file_path = get_new_path()
-                    crypt_file("encrypt", file, file_path)
-                else:
-                    # Send directly
-                    file_path = file
+    return False
 
-                result = send_document(client, channel_id, file_path, text)
-                # Delete the tmp file
-                if result:
-                    for f in {file, file_path}:
-                        if "tmp/" in f:
-                            thread(delete_file, (f,))
-            else:
-                text = format_data(
-                    sender=glovar.sender,
-                    receivers=receivers,
-                    action=action,
-                    action_type=action_type,
-                    data=data
-                )
-                result = send_message(client, channel_id, text)
 
-            # Sending failed due to channel issue
-            if result is False:
-                return True
+def share_data(client: Client, receivers: List[str], action: str, action_type: str,
+               data: Union[bool, dict, int, str] = None, file: str = None, encrypt: bool = True) -> bool:
+    # Use this function to share data in the channel
+    try:
+        thread(
+            target=share_data_thread,
+            args=(client, receivers, action, action_type, data, file, encrypt)
+        )
 
         return True
     except Exception as e:
@@ -191,19 +183,80 @@ def share_data(client: Client, receivers: List[str], action: str, action_type: s
     return False
 
 
+def share_data_thread(client: Client, receivers: List[str], action: str, action_type: str,
+                      data: Union[bool, dict, int, str] = None, file: str = None, encrypt: bool = True) -> bool:
+    # Share data thread
+    try:
+        if glovar.sender in receivers:
+            receivers.remove(glovar.sender)
+
+        if not receivers:
+            return True
+
+        channel_id = glovar.hide_channel_id
+
+        if file:
+            text = format_data(
+                sender=glovar.sender,
+                receivers=receivers,
+                action=action,
+                action_type=action_type,
+                data=data
+            )
+
+            if encrypt:
+                # Encrypt the file, save to the tmp directory
+                file_path = get_new_path()
+                crypt_file("encrypt", file, file_path)
+            else:
+                # Send directly
+                file_path = file
+
+            result = send_document(client, channel_id, file_path, None, text)
+
+            # Delete the tmp file
+            if result:
+                for f in {file, file_path}:
+                    "tmp/" in f and thread(delete_file, (f,))
+        else:
+            text = format_data(
+                sender=glovar.sender,
+                receivers=receivers,
+                action=action,
+                action_type=action_type,
+                data=data
+            )
+            result = send_message(client, channel_id, text)
+
+        # Sending failed due to channel issue
+        if result is False:
+            return True
+
+        return True
+    except Exception as e:
+        logger.warning(f"Share data thread error: {e}", exc_info=True)
+
+    return False
+
+
 def share_regex_count(client: Client, word_type: str) -> bool:
     # Use this function to share regex count to REGEX
     try:
-        if glovar.regex[word_type]:
-            file = data_to_file(eval(f"glovar.{word_type}_words"))
-            share_data(
-                client=client,
-                receivers=["REGEX"],
-                action="regex",
-                action_type="count",
-                data=f"{word_type}_words",
-                file=file
-            )
+        if not glovar.regex.get(word_type):
+            return True
+
+        if not eval(f"glovar.{word_type}_words"):
+            return True
+
+        file = data_to_file(eval(f"glovar.{word_type}_words"))
+        share_data(
+            client=client,
+            receivers=["REGEX"],
+            action="regex",
+            action_type="count",
+            data=f"{word_type}_words",
+            file=file
+        )
 
         return True
     except Exception as e:

@@ -25,7 +25,7 @@ from pytesseract import image_to_string
 from pyzbar.pyzbar import decode
 
 from .. import glovar
-from .etc import t2s
+from .etc import t2t
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -38,6 +38,7 @@ def get_color(path: str) -> bool:
         w, h = image.size
         data = image.getdata()
         cnt = 0
+
         for i, ycbcr in enumerate(data):
             y, cb, cr = ycbcr
             if 86 <= cb <= 117 and 140 <= cr <= 168:
@@ -110,10 +111,14 @@ def get_file_id(message: Message) -> (str, str, bool):
 def get_ocr(path: str, test: bool = False) -> str:
     result = ""
     try:
+        if not path:
+            return ""
+
         image = Image.open(path)
         enhancer = ImageEnhance.Contrast(image)
         image = enhancer.enhance(2)
         result = image_to_string(image, lang='chi_sim+chi_tra')
+
         if not result:
             image = image.convert('L')
             image = get_processed_image(image)
@@ -126,7 +131,7 @@ def get_ocr(path: str, test: bool = False) -> str:
                 result = re.sub(r"\n", " ", result)
 
             result = re.sub(r"\s{2,}", " ", result)
-            result = t2s(result)
+            result = t2t(result, False)
     except Exception as e:
         logger.warning(f"Get OCR error: {e}", exc_info=True)
 
@@ -138,6 +143,7 @@ def get_processed_image(image: Image.Image) -> Image.Image:
         image.thumbnail((200, 200))
         s = 0
         total = 0
+
         for count, color in image.getcolors(image.size[0] * image.size[1]):
             s += count * color
             total += count
@@ -157,6 +163,9 @@ def get_qrcode(path: str) -> str:
     # Get QR code
     result = ""
     try:
+        if not path:
+            return ""
+
         # Open
         image = Image.open(path)
 
@@ -178,7 +187,7 @@ def get_qrcode(path: str) -> str:
 
             if result:
                 result = result[:-1]
-                result = t2s(result)
+                result = t2t(result, False)
     except Exception as e:
         logger.warning(f"Get qrcode error: {e}", exc_info=True)
 

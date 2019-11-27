@@ -19,12 +19,82 @@
 import logging
 from typing import Optional
 
-from pyrogram import Client, Message
+from pyrogram import Chat, ChatMember, Client, Message
 
-from .telegram import get_messages
+from .. import glovar
+from .etc import t2t
+from .ids import init_group_id
+from .telegram import get_chat, get_chat_member, get_messages
 
 # Enable logging
 logger = logging.getLogger(__name__)
+
+
+def get_description(client: Client, gid: int) -> str:
+    # Get group's description
+    result = ""
+    try:
+        group = get_group(client, gid)
+        if group and group.description:
+            result = t2t(group.description, False)
+    except Exception as e:
+        logger.warning(f"Get description error: {e}", exc_info=True)
+
+    return result
+
+
+def get_group(client: Client, gid: int, cache: bool = True) -> Optional[Chat]:
+    # Get the group
+    result = None
+    try:
+        the_cache = glovar.chats.get(gid)
+
+        if the_cache:
+            result = the_cache
+        else:
+            result = get_chat(client, gid)
+
+        if cache and result:
+            glovar.chats[gid] = result
+    except Exception as e:
+        logger.warning(f"Get group error: {e}", exc_info=True)
+
+    return result
+
+
+def get_group_sticker(client: Client, gid: int) -> str:
+    # Get group sticker set name
+    result = ""
+    try:
+        group = get_group(client, gid)
+        if group and group.sticker_set_name:
+            result = group.sticker_set_name
+    except Exception as e:
+        logger.warning(f"Get group sticker error: {e}", exc_info=True)
+
+    return result
+
+
+def get_member(client: Client, gid: int, uid: int, cache: bool = True) -> Optional[ChatMember]:
+    # Get a member in the group
+    result = None
+    try:
+        if not init_group_id(gid):
+            return None
+
+        the_cache = glovar.members[gid].get(uid)
+
+        if the_cache:
+            result = the_cache
+        else:
+            result = get_chat_member(client, gid, uid)
+
+        if cache and result:
+            glovar.members[gid][uid] = result
+    except Exception as e:
+        logger.warning(f"Get member error: {e}", exc_info=True)
+
+    return result
 
 
 def get_message(client: Client, gid: int, mid: int) -> Optional[Message]:
@@ -37,5 +107,18 @@ def get_message(client: Client, gid: int, mid: int) -> Optional[Message]:
             result = result[0]
     except Exception as e:
         logger.warning(f"Get message error: {e}", exc_info=True)
+
+    return result
+
+
+def get_pinned(client: Client, gid: int) -> Optional[Message]:
+    # Get group's pinned message
+    result = None
+    try:
+        group = get_group(client, gid)
+        if group and group.pinned_message:
+            result = group.pinned_message
+    except Exception as e:
+        logger.warning(f"Get pinned error: {e}", exc_info=True)
 
     return result

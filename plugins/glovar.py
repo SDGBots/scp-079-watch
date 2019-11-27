@@ -56,6 +56,7 @@ user_id: int = 0
 warn_id: int = 0
 
 # [channels]
+debug_channel_id: int = 0
 hide_channel_id: int = 0
 watch_channel_id: int = 0
 
@@ -71,6 +72,8 @@ lang_sticker: Union[str, Set[str]] = ""
 lang_text: Union[str, Set[str]] = ""
 limit_ban: int = 0
 limit_delete: int = 0
+project_link: str = ""
+project_name: str = ""
 time_ban: int = 0
 time_delete: int = 0
 time_new: int = 0
@@ -106,6 +109,7 @@ try:
     user_id = int(config["bots"].get("user_id", user_id))
     warn_id = int(config["bots"].get("warn_id", warn_id))
     # [channels]
+    debug_channel_id = int(config["channels"].get("debug_channel_id", debug_channel_id))
     hide_channel_id = int(config["channels"].get("hide_channel_id", hide_channel_id))
     watch_channel_id = int(config["channels"].get("watch_channel_id", watch_channel_id))
     # [custom]
@@ -128,6 +132,8 @@ try:
     lang_text = set(lang_text.split())
     limit_ban = int(config["custom"].get("limit_ban", limit_ban))
     limit_delete = int(config["custom"].get("limit_delete", limit_delete))
+    project_link = config["custom"].get("project_link", project_link)
+    project_name = config["custom"].get("project_name", project_name)
     time_ban = int(config["custom"].get("time_ban", time_ban))
     time_delete = int(config["custom"].get("time_delete", time_delete))
     time_new = int(config["custom"].get("time_new", time_new))
@@ -161,6 +167,7 @@ if (captcha_id == 0
         or tip_id == 0
         or user_id == 0
         or warn_id == 0
+        or debug_channel_id == 0
         or hide_channel_id == 0
         or watch_channel_id == 0
         or backup not in {False, True}
@@ -174,6 +181,8 @@ if (captcha_id == 0
         or lang_text in {"", "[DATA EXPUNGED]"} or lang_text == set()
         or limit_ban == 0
         or limit_delete == 0
+        or project_link in {"", "[DATA EXPUNGED]"}
+        or project_name in {"", "[DATA EXPUNGED]"}
         or time_ban == 0
         or time_delete == 0
         or time_new == 0
@@ -192,8 +201,57 @@ if (captcha_id == 0
 
 # Languages
 lang: Dict[str, str] = {
+    # Admin
+    "admin": (zh_cn and "管理员") or "Admin",
+    "admin_group": (zh_cn and "群管理") or "Group Admin",
+    "admin_project": (zh_cn and "项目管理员") or "Project Admin",
+    # Basic
+    "action": (zh_cn and "执行操作") or "Action",
+    "clear": (zh_cn and "清空数据") or "Clear Data",
+    "colon": (zh_cn and "：") or ": ",
+    "comma": (zh_cn and "，") or ", ",
+    "description": (zh_cn and "说明") or "Description",
+    "disabled": (zh_cn and "禁用") or "Disabled",
+    "enabled": (zh_cn and "启用") or "Enabled",
+    "name": (zh_cn and "名称") or "Name",
+    "reason": (zh_cn and "原因") or "Reason",
+    "reset": (zh_cn and "重置数据") or "Reset Data",
+    "rollback": (zh_cn and "数据回滚") or "Rollback",
+    "score": (zh_cn and "评分") or "Score",
+    "status_failed": (zh_cn and "未执行") or "Failed",
+    "version": (zh_cn and "版本") or "Version",
+    # More
+    "privacy": (zh_cn and "可能涉及隐私而未转发") or "Not Forwarded Due to Privacy Reason",
+    "cannot_forward": (zh_cn and "此类消息无法转发至频道") or "The Message Cannot be Forwarded to Channel",
+    # Message Types
+    "gam": (zh_cn and "游戏") or "Game",
+    "ser": (zh_cn and "服务消息") or "Service",
+    # Record
+    "project": (zh_cn and "项目编号") or "Project",
+    "project_origin": (zh_cn and "原始项目") or "Original Project",
+    "status": (zh_cn and "状态") or "Status",
+    "user_id": (zh_cn and "用户 ID") or "User ID",
+    "level": (zh_cn and "操作等级") or "Level",
+    "rule": (zh_cn and "规则") or "Rule",
+    "message_type": (zh_cn and "消息类别") or "Message Type",
+    "message_game": (zh_cn and "游戏标识") or "Game Short Name",
+    "message_lang": (zh_cn and "消息语言") or "Message Language",
+    "message_len": (zh_cn and "消息长度") or "Message Length",
+    "message_freq": (zh_cn and "消息频率") or "Message Frequency",
+    "user_score": (zh_cn and "用户得分") or "User Score",
+    "user_bio": (zh_cn and "用户简介") or "User Bio",
+    "user_name": (zh_cn and "用户昵称") or "User Name",
+    "from_name": (zh_cn and "来源名称") or "Forward Name",
+    "contact": (zh_cn and "联系方式") or "Contact Info",
+    "more": (zh_cn and "附加信息") or "Extra Info",
+    # Special
     "ban": (zh_cn and "封禁追踪") or "Ban Watch",
-    "delete": (zh_cn and "删除追踪") or "Delete Watch"
+    "delete": (zh_cn and "删除追踪") or "Delete Watch",
+    "new_user": (zh_cn and "新用户") or "New User",
+    "suggest_ban": (zh_cn and "建议封禁") or "Suggest Ban",
+    "suggest_delete": (zh_cn and "建议删除") or "Suggest Delete",
+    "track_ban": (zh_cn and "观察封禁") or "Track Ban",
+    "track_delete": (zh_cn and "观察删除") or "Track Delete"
 }
 
 # Init
