@@ -93,7 +93,6 @@ def check_join(client: Client, message: Message) -> bool:
     glovar.locks["message"].acquire()
     try:
         # Basic data
-        gid = message.chat.id
         now = message.date or get_now()
 
         for new in message.new_chat_members:
