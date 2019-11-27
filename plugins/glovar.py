@@ -18,78 +18,26 @@
 
 import logging
 import pickle
+from codecs import getdecoder
 from configparser import RawConfigParser
 from os import mkdir
 from os.path import exists
 from shutil import rmtree
+from string import ascii_lowercase
 from threading import Lock
 from typing import Dict, List, Set, Union
 
+from emoji import UNICODE_EMOJI
+from pyrogram import Chat, ChatMember
+
 # Enable logging
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.WARNING,
-    filename='log',
-    filemode='w'
+    filename="log",
+    filemode="w"
 )
 logger = logging.getLogger(__name__)
-
-# Init
-
-contents: Dict[str, str] = {}
-# contents = {
-#     "content": "wb"
-# }
-
-declared_message_ids: Dict[int, Set[int]] = {}
-# declared_message_ids = {
-#     -10012345678: {123}
-# }
-
-default_user_status: Dict[str, Union[int, str, Set[int]]] = {
-    "join": 0,
-    "type": "",
-    "until": 0,
-    "ban": set(),
-    "delete": set()
-}
-
-locks: Dict[str, Lock] = {
-    "message": Lock(),
-    "regex": Lock()
-}
-
-names: dict = {
-    "ban": "封禁追踪",
-    "delete": "删除追踪"
-}
-
-receivers: Dict[str, List[str]] = {
-    "watch": ["ANALYZE", "CAPTCHA", "CLEAN", "LANG", "LONG",
-              "MANAGE", "NOFLOOD", "NOPORN", "NOSPAM", "RECHECK", "WATCH"]
-}
-
-regex: Dict[str, bool] = {
-    "ad": True,
-    "aff": True,
-    "ban": False,
-    "bio": False,
-    "con": True,
-    "del": False,
-    "iml": True,
-    "nm": False,
-    "sho": True,
-    "spc": True,
-    "spe": True,
-    "tgl": True,
-    "tgp": True,
-    "wb": True,
-    "wd": True
-}
-
-sender: str = "WATCH"
-
-version: str = "0.0.7"
 
 # Read data from config.ini
 
@@ -112,16 +60,30 @@ hide_channel_id: int = 0
 watch_channel_id: int = 0
 
 # [custom]
+backup: Union[bool, str] = ""
+date_reset: str = ""
 image_size: int = 0
+invalid: Union[str, Set[str]] = ""
+lang_bio: Union[str, Set[str]] = ""
 lang_name: Union[str, Set[str]] = ""
 lang_protect: Union[str, Set[str]] = ""
+lang_sticker: Union[str, Set[str]] = ""
 lang_text: Union[str, Set[str]] = ""
 limit_ban: int = 0
 limit_delete: int = 0
-reset_day: str = ""
 time_ban: int = 0
 time_delete: int = 0
 time_new: int = 0
+time_forgive: int = 0
+zh_cn: Union[bool, str] = ""
+
+# [emoji]
+emoji_ad_single: int = 0
+emoji_ad_total: int = 0
+emoji_many: int = 0
+emoji_protect: str = ""
+emoji_wb_single: int = 0
+emoji_wb_total: int = 0
 
 # [encrypt]
 key: Union[str, bytes] = ""
@@ -147,19 +109,38 @@ try:
     hide_channel_id = int(config["channels"].get("hide_channel_id", hide_channel_id))
     watch_channel_id = int(config["channels"].get("watch_channel_id", watch_channel_id))
     # [custom]
+    backup = config["custom"].get("backup", backup)
+    backup = eval(backup)
+    date_reset = config["custom"].get("date_reset", date_reset)
     image_size = int(config["custom"].get("image_size", image_size))
+    invalid = config["custom"].get("invalid", invalid)
+    invalid = set(invalid.split())
+    invalid = {i.lower() for i in invalid}
+    lang_bio = config["custom"].get("lang_bio", lang_bio)
+    lang_bio = set(lang_bio.split())
     lang_name = config["custom"].get("lang_name", lang_name)
     lang_name = set(lang_name.split())
     lang_protect = config["custom"].get("lang_protect", lang_protect)
     lang_protect = set(lang_protect.split())
+    lang_sticker = config["custom"].get("lang_sticker", lang_sticker)
+    lang_sticker = set(lang_sticker.split())
     lang_text = config["custom"].get("lang_text", lang_text)
     lang_text = set(lang_text.split())
     limit_ban = int(config["custom"].get("limit_ban", limit_ban))
     limit_delete = int(config["custom"].get("limit_delete", limit_delete))
-    reset_day = config["custom"].get("reset_day", reset_day)
     time_ban = int(config["custom"].get("time_ban", time_ban))
     time_delete = int(config["custom"].get("time_delete", time_delete))
     time_new = int(config["custom"].get("time_new", time_new))
+    time_forgive = int(config["custom"].get("time_forgive", time_forgive))
+    zh_cn = config["custom"].get("zh_cn", zh_cn)
+    zh_cn = eval(zh_cn)
+    # [emoji]
+    emoji_ad_single = int(config["emoji"].get("emoji_ad_single", emoji_ad_single))
+    emoji_ad_total = int(config["emoji"].get("emoji_ad_total", emoji_ad_total))
+    emoji_many = int(config["emoji"].get("emoji_many", emoji_many))
+    emoji_protect = getdecoder("unicode_escape")(config["emoji"].get("emoji_protect", emoji_protect))[0]
+    emoji_wb_single = int(config["emoji"].get("emoji_wb_single", emoji_wb_single))
+    emoji_wb_total = int(config["emoji"].get("emoji_wb_total", emoji_wb_total))
     # [encrypt]
     key = config["encrypt"].get("key", key)
     key = key.encode("utf-8")
@@ -182,23 +163,127 @@ if (captcha_id == 0
         or warn_id == 0
         or hide_channel_id == 0
         or watch_channel_id == 0
+        or backup not in {False, True}
+        or date_reset in {"", "[DATA EXPUNGED]"}
         or image_size == 0
+        or invalid in {"", "[DATA EXPUNGED]"} or invalid == set()
+        or lang_bio in {"", "[DATA EXPUNGED]"} or lang_bio == set()
         or lang_name in {"", "[DATA EXPUNGED]"} or lang_name == set()
         or lang_protect in {"", "[DATA EXPUNGED]"} or lang_protect == set()
+        or lang_sticker in {"", "[DATA EXPUNGED]"} or lang_sticker == set()
         or lang_text in {"", "[DATA EXPUNGED]"} or lang_text == set()
         or limit_ban == 0
         or limit_delete == 0
-        or reset_day in {"", "[DATA EXPUNGED]"}
         or time_ban == 0
         or time_delete == 0
         or time_new == 0
-        or key in {"", b"[DATA EXPUNGED]"}
+        or time_forgive == 0
+        or zh_cn not in {False, True}
+        or emoji_ad_single == 0
+        or emoji_ad_total == 0
+        or emoji_many == 0
+        or emoji_protect in {"", "[DATA EXPUNGED]"}
+        or emoji_wb_single == 0
+        or emoji_wb_total == 0
+        or key in {b"", b"[DATA EXPUNGED]", "", "[DATA EXPUNGED]"}
         or password in {"", "[DATA EXPUNGED]"}):
     logger.critical("No proper settings")
     raise SystemExit("No proper settings")
 
-bot_ids: Set[int] = {avatar_id, captcha_id, clean_id, lang_id, long_id,
-                     noflood_id, noporn_id, nospam_id, recheck_id, tip_id, user_id, warn_id}
+# Languages
+lang: Dict[str, str] = {
+    "ban": (zh_cn and "封禁追踪") or "Ban Watch",
+    "delete": (zh_cn and "删除追踪") or "Delete Watch"
+}
+
+# Init
+
+bot_ids: Set[int] = {avatar_id, captcha_id, clean_id, lang_id, long_id, noflood_id,
+                     noporn_id, nospam_id, recheck_id, tip_id, user_id, warn_id}
+
+chats: Dict[int, Chat] = {}
+# chats = {
+#     -10012345678: Chat
+# }
+
+contents: Dict[str, str] = {}
+# contents = {
+#     "content": "wb"
+# }
+
+declared_message_ids: Dict[int, Set[int]] = {}
+# declared_message_ids = {
+#     -10012345678: {123}
+# }
+
+default_user_status: Dict[str, Union[int, str, Dict[int, int]]] = {
+    "join": 0,
+    "type": "",
+    "until": 0,
+    "ban": {},
+    "delete": {}
+}
+
+emoji_set: Set[str] = set(UNICODE_EMOJI)
+
+locks: Dict[str, Lock] = {
+    "message": Lock(),
+    "receive": Lock(),
+    "regex": Lock(),
+    "text": Lock()
+}
+
+members: Dict[int, Dict[int, ChatMember]] = {}
+# members = {
+#     -10012345678: {
+#         12345678: ChatMember
+#     }
+# }
+
+receivers: Dict[str, List[str]] = {
+    "watch": ["ANALYZE", "CAPTCHA", "CLEAN", "LANG", "LONG",
+              "MANAGE", "NOFLOOD", "NOPORN", "NOSPAM", "RECHECK", "WATCH"]
+}
+
+regex: Dict[str, bool] = {
+    "ad": True,
+    "aff": True,
+    "ban": False,
+    "bio": False,
+    "con": True,
+    "del": False,
+    "fil": True,
+    "iml": True,
+    "pho": True,
+    "nm": False,
+    "sho": True,
+    "spc": True,
+    "spe": True,
+    "sti": True,
+    "tgl": True,
+    "tgp": True,
+    "wb": True,
+    "wd": True
+}
+for c in ascii_lowercase:
+    regex[f"ad{c}"] = True
+
+sender: str = "WATCH"
+
+sticker_titles: Dict[str, str] = {}
+# sticker_titles = {
+#     "short_name": "sticker_title"
+# }
+
+usernames: Dict[str, Dict[str, Union[int, str]]] = {}
+# usernames = {
+#     "SCP_079": {
+#         "peer_type": "channel",
+#         "peer_id": -1001196128009
+#     }
+# }
+
+version: str = "0.0.8"
 
 # Load data from pickle
 
@@ -240,8 +325,10 @@ user_ids: Dict[int, Dict[str, Union[int, str, Set[int]]]] = {}
 #         "join": 0,
 #         "type": "",
 #         "until": 0,
-#         "ban": set(),
-#         "delete": set()
+#         "ban": {},
+#         "delete": {
+#             -10012345678: 1512345678
+#         }
 #     }
 # }
 
@@ -273,6 +360,23 @@ for file in file_list:
     except Exception as e:
         logger.critical(f"Load data {file} backup error: {e}", exc_info=True)
         raise SystemExit("[DATA CORRUPTION]")
+
+# Generate special characters dictionary
+for special in ["spc", "spe"]:
+    locals()[f"{special}_dict"]: Dict[str, str] = {}
+    for rule in locals()[f"{special}_words"]:
+        # Check keys
+        if "[" not in rule:
+            continue
+
+        # Check value
+        if "?#" not in rule:
+            continue
+
+        keys = rule.split("]")[0][1:]
+        value = rule.split("?#")[1][1]
+        for k in keys:
+            locals()[f"{special}_dict"][k] = value
 
 # Start program
 copyright_text = (f"SCP-079-{sender} v{version}, Copyright (C) 2019 SCP-079 <https://scp-079.org>\n"
