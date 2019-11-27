@@ -251,7 +251,9 @@ lang: Dict[str, str] = {
     "suggest_ban": (zh_cn and "建议封禁") or "Suggest Ban",
     "suggest_delete": (zh_cn and "建议删除") or "Suggest Delete",
     "track_ban": (zh_cn and "观察封禁") or "Track Ban",
-    "track_delete": (zh_cn and "观察删除") or "Track Delete"
+    "track_delete": (zh_cn and "观察删除") or "Track Delete",
+    # Unit
+    "members": (zh_cn and "名") or "member(s)"
 }
 
 # Init
