@@ -62,7 +62,7 @@ def forward_evidence(client: Client, message: Message, level: str,
         text = (f"{lang('project')}{lang('colon')}{code(glovar.sender)}\n"
                 f"{lang('user_id')}{lang('colon')}{code(uid)}\n"
                 f"{lang('level')}{lang('colon')}{code(level)}\n"
-                f"{lang('rule')}{lang('colon')}{code('rule_global')}\n")
+                f"{lang('rule')}{lang('colon')}{code(lang('rule_global'))}\n")
 
         # Additional information
         if message.game:
