@@ -18,23 +18,24 @@
 
 import logging
 
-from pyrogram import Client, Message
+from pyrogram import Client, Message, User
 
 from .. import glovar
 from .channel import forward_evidence, share_watch_user
 from .etc import crypt_str, get_now, lang
 from .file import save
-from .filters import is_class_d, is_declared_message
+from .filters import is_class_d, is_declared_message, is_watch_user
 from .ids import init_user_id
 
 # Enable logging
 logger = logging.getLogger(__name__)
 
 
-def add_watch_count(the_type: str, gid: int, uid: int) -> bool:
+def add_watch_count(the_type: str, gid: int, user: User) -> bool:
     # Change a user's watch count
     try:
         # Basic data
+        uid = user.id
         now = get_now()
 
         if not init_user_id(uid):
@@ -43,6 +44,10 @@ def add_watch_count(the_type: str, gid: int, uid: int) -> bool:
         glovar.user_ids[uid][the_type][gid] = now
 
         if len(glovar.user_ids[uid][the_type]) != eval(f"glovar.limit_{the_type}"):
+            save("user_ids")
+            return False
+
+        if is_watch_user(user, the_type):
             save("user_ids")
             return False
 
@@ -104,7 +109,7 @@ def terminate_user(client: Client, message: Message, the_type: str) -> bool:
         else:
             sticker_title = None
 
-        should_watch = add_watch_count(the_type, gid, uid)
+        should_watch = add_watch_count(the_type, gid, message.from_user)
 
         if not should_watch:
             return True
