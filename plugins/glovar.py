@@ -329,7 +329,7 @@ members: Dict[int, Dict[int, ChatMember]] = {}
 
 receivers: Dict[str, List[str]] = {
     "watch": ["ANALYZE", "CAPTCHA", "CLEAN", "LANG", "LONG", "MANAGE",
-              "NOFLOOD", "NOPORN", "NOSPAM", "RECHECK", "TIP", "WARN", "WATCH"]
+              "NOFLOOD", "NOPORN", "NOSPAM", "RECHECK", "TIP", "USER", "WARN", "WATCH"]
 }
 
 regex: Dict[str, bool] = {
