@@ -25,13 +25,13 @@ from ..functions.channel import get_content
 from ..functions.etc import get_full_name, get_now, thread
 from ..functions.file import save
 from ..functions.filters import class_c, class_d, class_e, declared_message, from_user, hide_channel, is_bio_text
-from ..functions.filters import is_nm_text, is_declared_message, is_lang, is_watch_message, is_watch_user
-from ..functions.filters import new_user, watch_ban
+from ..functions.filters import is_nm_text, is_declared_message, is_high_score_user, is_lang, is_watch_message
+from ..functions.filters import is_watch_user, new_user, watch_ban
 from ..functions.ids import init_user_id
 from ..functions.receive import receive_add_bad, receive_add_except, receive_clear_data, receive_declared_message
-from ..functions.receive import receive_regex, receive_remove_bad, receive_remove_except, receive_remove_watch
-from ..functions.receive import receive_rollback, receive_status_ask, receive_text_data
-from ..functions.receive import receive_version_ask, receive_watch_user
+from ..functions.receive import receive_regex, receive_remove_bad, receive_remove_except, receive_remove_score
+from ..functions.receive import receive_remove_watch, receive_rollback, receive_status_ask, receive_text_data
+from ..functions.receive import receive_user_score, receive_version_ask, receive_watch_user
 from ..functions.timers import backup_files, send_count
 from ..functions.user import terminate_user
 from ..functions.telegram import get_user_bio, read_history
@@ -60,6 +60,10 @@ def check(client: Client, message: Message) -> bool:
 
         # Do not track again
         if is_watch_user(message.from_user, "ban"):
+            return True
+
+        # Check high score user
+        if is_high_score_user(message.from_user):
             return True
 
         # Watch message
@@ -177,6 +181,8 @@ def process_data(client: Client, message: Message) -> bool:
                 if action == "update":
                     if action_type == "declare":
                         receive_declared_message(data)
+                    elif action_type == "score":
+                        receive_user_score(sender, data)
 
             if sender == "CLEAN":
 
@@ -189,6 +195,8 @@ def process_data(client: Client, message: Message) -> bool:
                 elif action == "update":
                     if action_type == "declare":
                         receive_declared_message(data)
+                    elif action_type == "score":
+                        receive_user_score(sender, data)
 
             elif sender == "HIDE":
 
@@ -207,6 +215,8 @@ def process_data(client: Client, message: Message) -> bool:
                 elif action == "update":
                     if action_type == "declare":
                         receive_declared_message(data)
+                    elif action_type == "score":
+                        receive_user_score(sender, data)
 
             elif sender == "LONG":
 
@@ -219,6 +229,8 @@ def process_data(client: Client, message: Message) -> bool:
                 elif action == "update":
                     if action_type == "declare":
                         receive_declared_message(data)
+                    elif action_type == "score":
+                        receive_user_score(sender, data)
 
             elif sender == "MANAGE":
 
@@ -242,6 +254,8 @@ def process_data(client: Client, message: Message) -> bool:
                         receive_remove_bad(data)
                     elif action_type == "except":
                         receive_remove_except(client, data)
+                    elif action_type == "score":
+                        receive_remove_score(data)
                     elif action_type == "watch":
                         receive_remove_watch(data)
 
@@ -260,6 +274,8 @@ def process_data(client: Client, message: Message) -> bool:
                 elif action == "update":
                     if action_type == "declare":
                         receive_declared_message(data)
+                    elif action_type == "score":
+                        receive_user_score(sender, data)
 
             elif sender == "NOPORN":
 
@@ -272,6 +288,8 @@ def process_data(client: Client, message: Message) -> bool:
                 elif action == "update":
                     if action_type == "declare":
                         receive_declared_message(data)
+                    elif action_type == "score":
+                        receive_user_score(sender, data)
 
             elif sender == "NOSPAM":
 
@@ -284,6 +302,8 @@ def process_data(client: Client, message: Message) -> bool:
                 elif action == "update":
                     if action_type == "declare":
                         receive_declared_message(data)
+                    elif action_type == "score":
+                        receive_user_score(sender, data)
 
             elif sender == "RECHECK":
 
@@ -296,6 +316,8 @@ def process_data(client: Client, message: Message) -> bool:
                 elif action == "update":
                     if action_type == "declare":
                         receive_declared_message(data)
+                    elif action_type == "score":
+                        receive_user_score(sender, data)
 
             elif sender == "REGEX":
 

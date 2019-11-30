@@ -255,15 +255,20 @@ def is_ban_text(text: str, ocr: bool, message: Message = None) -> bool:
         if is_regex_text("ban", text, ocr):
             return True
 
+        # ad + con
         ad = is_regex_text("ad", text, ocr) or is_emoji("ad", text, message)
         con = is_con_text(text, ocr)
+
         if ad and con:
             return True
 
+        # ad_ + con
         ad = is_ad_text(text, ocr)
+
         if ad and con:
             return True
 
+        # ad_ + ad_
         if ad:
             ad = is_ad_text(text, ocr, ad)
             return bool(ad)
@@ -281,6 +286,27 @@ def is_bio_text(text: str) -> bool:
             return True
     except Exception as e:
         logger.warning(f"Is bio text error: {e}", exc_info=True)
+
+    return False
+
+
+def is_class_e_user(user: Union[int, User]) -> bool:
+    # Check if the user is a Class E personnel
+    try:
+        if isinstance(user, int):
+            uid = user
+        else:
+            uid = user.id
+
+        if uid in glovar.bot_ids:
+            return True
+
+        group_list = list(glovar.admin_ids)
+        for gid in group_list:
+            if uid in glovar.admin_ids.get(gid, set()):
+                return True
+    except Exception as e:
+        logger.warning(f"Is class e user error: {e}", exc_info=True)
 
     return False
 
@@ -305,7 +331,6 @@ def is_con_text(text: str, ocr: bool) -> bool:
     # Check if the text is con text
     try:
         if (is_regex_text("con", text, ocr)
-                or is_regex_text("aff", text, ocr)
                 or is_regex_text("iml", text, ocr)
                 or is_regex_text("pho", text, ocr)):
             return True
@@ -427,6 +452,27 @@ def is_friend_username(client: Client, gid: int, username: str, friend: bool, fr
         logger.warning(f"Is friend username: {e}", exc_info=True)
 
     return False
+
+
+def is_high_score_user(user: User) -> float:
+    # Check if the message is sent by a high score user
+    try:
+        if is_class_e_user(user):
+            return 0.0
+
+        uid = user.id
+        user_status = glovar.user_ids.get(uid, {})
+
+        if not user_status:
+            return 0.0
+
+        score = sum(user_status["score"].values())
+        if score >= 3.0:
+            return score
+    except Exception as e:
+        logger.warning(f"Is high score user error: {e}", exc_info=True)
+
+    return 0.0
 
 
 def is_lang(the_type: str, text: str) -> bool:
@@ -915,15 +961,14 @@ def is_wb_text(text: str, ocr: bool) -> bool:
     try:
         if (is_regex_text("wb", text, ocr)
                 or is_regex_text("ad", text, ocr)
-                or is_regex_text("aff", text, ocr)
                 or is_regex_text("iml", text, ocr)
                 or is_regex_text("pho", text, ocr)
-                or is_regex_text("spc", text, ocr)
-                or is_regex_text("spe", text, ocr)):
+                or is_regex_text("sho", text, ocr)
+                or is_regex_text("spc", text, ocr)):
             return True
 
         for c in ascii_lowercase:
-            if is_regex_text(f"ad{c}", text, ocr):
+            if c not in {"i"} and is_regex_text(f"ad{c}", text, ocr):
                 return True
     except Exception as e:
         logger.warning(f"Is wb text error: {e}", exc_info=True)
@@ -935,8 +980,9 @@ def is_wd_text(text: str, ocr: bool) -> bool:
     # Check if the text is wd text
     try:
         if (is_regex_text("wd", text, ocr)
+                or is_regex_text("adi", text, ocr)
                 or is_regex_text("con", text, ocr)
-                or is_regex_text("sho", text, ocr)
+                or is_regex_text("spe", text, ocr)
                 or is_regex_text("tgp", text, ocr)):
             return True
     except Exception as e:

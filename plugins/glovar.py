@@ -292,12 +292,23 @@ declared_message_ids: Dict[int, Set[int]] = {}
 #     -10012345678: {123}
 # }
 
-default_user_status: Dict[str, Union[int, str, Dict[int, int]]] = {
+default_user_status: Dict[str, Union[int, str, Dict[Union[int, str], Union[float, int]]]] = {
     "join": 0,
     "type": "",
     "until": 0,
     "ban": {},
-    "delete": {}
+    "delete": {},
+    "score": {
+        "captcha": 0.0,
+        "clean": 0.0,
+        "lang": 0.0,
+        "long": 0.0,
+        "noflood": 0.0,
+        "noporn": 0.0,
+        "nospam": 0.0,
+        "recheck": 0.0,
+        "warn": 0.0
+    }
 }
 
 emoji_set: Set[str] = set(UNICODE_EMOJI)
@@ -318,12 +329,11 @@ members: Dict[int, Dict[int, ChatMember]] = {}
 
 receivers: Dict[str, List[str]] = {
     "watch": ["ANALYZE", "CAPTCHA", "CLEAN", "LANG", "LONG", "MANAGE",
-              "NOFLOOD", "NOPORN", "NOSPAM", "RECHECK", "WARN", "WATCH"]
+              "NOFLOOD", "NOPORN", "NOSPAM", "RECHECK", "TIP", "WARN", "WATCH"]
 }
 
 regex: Dict[str, bool] = {
     "ad": True,
-    "aff": True,
     "ban": False,
     "bio": False,
     "con": True,
@@ -341,6 +351,7 @@ regex: Dict[str, bool] = {
     "wb": True,
     "wd": True
 }
+
 for c in ascii_lowercase:
     regex[f"ad{c}"] = True
 
@@ -359,7 +370,7 @@ usernames: Dict[str, Dict[str, Union[int, str]]] = {}
 #     }
 # }
 
-version: str = "0.1.1"
+version: str = "0.1.2"
 
 # Load data from pickle
 
@@ -374,6 +385,11 @@ for path in ["data", "tmp"]:
         mkdir(path)
 
 # Init ids variables
+
+admin_ids: Dict[int, Set[int]] = {}
+# admin_ids = {
+#     -10012345678: {12345678}
+# }
 
 bad_ids: Dict[str, Set[int]] = {
     "channels": set(),
@@ -395,7 +411,7 @@ except_ids: Dict[str, Set[Union[int, str]]] = {
 #     "temp": {"content"}
 # }
 
-user_ids: Dict[int, Dict[str, Union[int, str, Dict[int, int]]]] = {}
+user_ids: Dict[int, Dict[str, Union[int, str, Dict[Union[int, str], Union[float, int]]]]] = {}
 # user_ids = {
 #     12345678: {
 #         "join": 0,
@@ -404,6 +420,17 @@ user_ids: Dict[int, Dict[str, Union[int, str, Dict[int, int]]]] = {}
 #         "ban": {},
 #         "delete": {
 #             -10012345678: 1512345678
+#         },
+#         "score": {
+#             "captcha": 0.0,
+#             "clean": 0.0,
+#             "lang": 0.0,
+#             "long": 0.0,
+#             "noflood": 0.0,
+#             "noporn": 0.0,
+#             "nospam": 0.0,
+#             "recheck": 0.0,
+#             "warn": 0.0
 #         }
 #     }
 # }
