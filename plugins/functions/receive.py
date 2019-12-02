@@ -430,7 +430,6 @@ def receive_status_ask(client: Client, data: dict) -> bool:
         pending_ban_count = 0
         pending_delete_count = 0
         user_ids = deepcopy(glovar.user_ids)
-        queue_count = client.updates_queue.qsize()
 
         for uid in user_ids:
             if now - user_ids[uid]["join"] < glovar.time_new:
@@ -453,8 +452,7 @@ def receive_status_ask(client: Client, data: dict) -> bool:
             lang("suggest_ban"): f"{ban_count} {lang('members')}",
             lang("suggest_delete"): f"{delete_count} {lang('members')}",
             lang("track_ban"): f"{pending_ban_count} {lang('members')}",
-            lang("track_delete"): f"{pending_delete_count} {lang('members')}",
-            lang("queue_count"): f"{queue_count}"
+            lang("track_delete"): f"{pending_delete_count} {lang('members')}"
         }
         file = data_to_file(status)
         share_data(
