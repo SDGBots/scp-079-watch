@@ -34,7 +34,7 @@ from ..functions.receive import receive_remove_watch, receive_rollback, receive_
 from ..functions.receive import receive_user_score, receive_version_ask, receive_watch_user
 from ..functions.timers import backup_files, send_count
 from ..functions.user import terminate_user
-from ..functions.telegram import get_user_bio, read_history
+from ..functions.telegram import get_user_bio
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -133,23 +133,6 @@ def check_join(client: Client, message: Message) -> bool:
         logger.warning(f"Check join error: {e}", exc_info=True)
     finally:
         glovar.locks["message"].release()
-
-    return False
-
-
-@Client.on_message(Filters.incoming & ~Filters.private, group=2)
-def mark_message(client: Client, message: Message) -> bool:
-    # Mark messages as read
-    try:
-        if not message.chat:
-            return True
-
-        cid = message.chat.id
-        thread(read_history, (client, cid))
-
-        return True
-    except Exception as e:
-        logger.warning(f"Mark message error: {e}", exc_info=True)
 
     return False
 

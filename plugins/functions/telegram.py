@@ -161,25 +161,6 @@ def get_user_bio(client: Client, uid: int, normal: bool = False) -> Optional[str
     return result
 
 
-def read_history(client: Client, cid: int) -> bool:
-    # Mark messages in a chat as read
-    try:
-        flood_wait = True
-        while flood_wait:
-            flood_wait = False
-            try:
-                client.read_history(chat_id=cid)
-            except FloodWait as e:
-                flood_wait = True
-                wait_flood(e)
-
-        return True
-    except Exception as e:
-        logger.warning(f"Read history in {cid} error: {e}", exc_info=True)
-
-    return False
-
-
 def resolve_peer(client: Client, pid: Union[int, str]) -> Union[bool, InputPeerChannel, InputPeerUser, None]:
     # Get an input peer by id
     result = None
