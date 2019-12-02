@@ -43,11 +43,11 @@ def add_watch_count(the_type: str, gid: int, user: User) -> bool:
 
         glovar.user_ids[uid][the_type][gid] = now
 
-        if len(glovar.user_ids[uid][the_type]) != eval(f"glovar.limit_{the_type}"):
+        if len(glovar.user_ids[uid][the_type]) < eval(f"glovar.limit_{the_type}"):
             save("user_ids")
             return False
 
-        if is_watch_user(user, the_type):
+        if is_watch_user(user, "ban") or (the_type == "delete" and is_watch_user(user, "delete")):
             save("user_ids")
             return False
 
