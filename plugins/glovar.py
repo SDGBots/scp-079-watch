@@ -248,6 +248,7 @@ lang: Dict[str, str] = {
     "ban": (zh_cn and "封禁追踪") or "Ban Watch",
     "delete": (zh_cn and "删除追踪") or "Delete Watch",
     "new_user": (zh_cn and "新用户") or "New User",
+    "queue_count": (zh_cn and "队列数量") or "Updates Queue Size",
     "suggest_ban": (zh_cn and "建议封禁") or "Suggest Ban",
     "suggest_delete": (zh_cn and "建议删除") or "Suggest Delete",
     "track_ban": (zh_cn and "封禁观察") or "Ban Track",
