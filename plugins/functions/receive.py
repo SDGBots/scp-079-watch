@@ -418,6 +418,7 @@ def receive_rollback(client: Client, message: Message, data: dict) -> bool:
 
 def receive_status_ask(client: Client, data: dict) -> bool:
     # Receive version info request
+    glovar.locks["text"].acquire()
     glovar.locks["message"].acquire()
     try:
         # Basic data
@@ -472,6 +473,7 @@ def receive_status_ask(client: Client, data: dict) -> bool:
     except Exception as e:
         logger.warning(f"Receive version ask error: {e}", exc_info=True)
     finally:
+        glovar.locks["text"].release()
         glovar.locks["message"].release()
 
     return False

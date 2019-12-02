@@ -59,13 +59,13 @@ def backup_files(client: Client) -> bool:
 
 def interval_hour_01() -> bool:
     # Execute every hour
+    glovar.locks["text"].acquire()
+    glovar.locks["message"].acquire()
     try:
         # Delete user data
         now = get_now()
 
-        with glovar.locks["message"] and glovar.locks["text"]:
-            user_ids = deepcopy(glovar.user_ids)
-
+        user_ids = deepcopy(glovar.user_ids)
         for uid in user_ids:
             if now - glovar.user_ids[uid]["join"] > glovar.time_new:
                 if now > glovar.user_ids[uid]["until"]:
@@ -82,6 +82,9 @@ def interval_hour_01() -> bool:
         save("user_ids")
     except Exception as e:
         logger.warning(f"Interval hour 01 error: {e}", exc_info=True)
+    finally:
+        glovar.locks["text"].release()
+        glovar.locks["message"].release()
 
     return False
 
