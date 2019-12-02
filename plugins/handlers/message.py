@@ -48,8 +48,6 @@ def check(client: Client, message: Message) -> bool:
 
     has_text = bool(message and (message.text or message.caption))
 
-    logger.warning(client.updates_queue.qsize())
-
     if has_text:
         glovar.locks["text"].acquire()
     else:
