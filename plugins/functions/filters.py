@@ -27,7 +27,7 @@ from pyrogram import Client, Filters, Message, User, WebPage
 from .. import glovar
 from .channel import get_content
 from .etc import get_channel_link, get_entity_text, get_filename, get_forward_name, get_lang, get_md5sum, get_now
-from .etc import get_links, get_stripped_link, get_text
+from .etc import get_links, get_stripped_link, get_text, thread
 from .file import delete_file, get_downloaded_path, save
 from .group import get_description, get_member, get_pinned
 from .ids import init_user_id
@@ -940,7 +940,7 @@ def is_watch_message(client: Client, message: Message) -> str:
         logger.warning(f"Is watch message error: {e}", exc_info=True)
     finally:
         for file in need_delete:
-            delete_file(file)
+            thread(delete_file, (file,))
 
     return result
 

@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from copy import deepcopy
 from time import sleep
 
 from pyrogram import Client
@@ -69,15 +68,14 @@ def interval_hour_01() -> bool:
         # Delete user data
         now = get_now()
 
-        user_ids = deepcopy(glovar.user_ids)
-        for uid in user_ids:
+        for uid in list(glovar.user_ids):
             if now - glovar.user_ids[uid]["join"] > glovar.time_new:
                 if now > glovar.user_ids[uid]["until"]:
                     glovar.user_ids.pop(uid, {})
                     continue
 
             for the_type in ["ban", "delete"]:
-                for gid in user_ids[uid][the_type]:
+                for gid in list(glovar.user_ids[uid][the_type]):
                     if now - glovar.user_ids[uid][the_type][gid] < glovar.time_forgive:
                         continue
 

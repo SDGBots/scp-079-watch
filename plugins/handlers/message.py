@@ -100,6 +100,10 @@ def check(client: Client, message: Message) -> bool:
                    & from_user & ~class_c)
 def check_join(client: Client, message: Message) -> bool:
     # Check new joined user
+
+    # TODO Debug
+    logger.warning(f"Acquiring lock by {message.message_id} in {message.chat.id} - Join")
+
     glovar.locks["message"].acquire()
     try:
         # Basic data
@@ -138,6 +142,9 @@ def check_join(client: Client, message: Message) -> bool:
     except Exception as e:
         logger.warning(f"Check join error: {e}", exc_info=True)
     finally:
+        # TODO Debug
+        logger.warning(f"Releasing lock by {message.message_id} in {message.chat.id} - Join")
+
         glovar.locks["message"].release()
 
     return False
