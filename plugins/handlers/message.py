@@ -57,6 +57,9 @@ def check(client: Client, message: Message) -> bool:
         glovar.locks["message"].acquire()
 
     try:
+        # TODO Debug
+        logger.warning(f"By {message.message_id} in {message.chat.id} - I'm in")
+
         # Check declare status
         if is_declared_message(None, message):
             return True
@@ -72,6 +75,10 @@ def check(client: Client, message: Message) -> bool:
         # Watch message
         content = get_content(message)
         detection = is_watch_message(client, message)
+
+        # TODO Debug
+        logger.warning(f"By {message.message_id} in {message.chat.id} - Detection: {detection}")
+
         if detection:
             result = terminate_user(client, message, detection)
             if result:
