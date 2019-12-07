@@ -246,7 +246,7 @@ def get_lang(text: str) -> str:
         text = "".join(t for t in text if t not in symbols and t not in glovar.emoji_set)
 
         # Avoid short name
-        if len(text) < 3:
+        if len(text) < 10:
             text = "".join(t for t in text if t.isprintable())
 
         # Detect
