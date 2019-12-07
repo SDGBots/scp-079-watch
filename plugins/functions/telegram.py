@@ -38,9 +38,6 @@ def download_media(client: Client, file_id: str, file_ref: str, file_path: str) 
     # Download a media file
     result = None
     try:
-        # TODO Debug
-        logger.warning(f"Downloading {file_id}")
-
         flood_wait = True
         while flood_wait:
             flood_wait = False
@@ -49,9 +46,6 @@ def download_media(client: Client, file_id: str, file_ref: str, file_path: str) 
             except FloodWait as e:
                 flood_wait = True
                 wait_flood(e)
-
-        # TODO Debug
-        logger.warning(f"Downloaded {file_id}")
     except Exception as e:
         logger.warning(f"Download media {file_id} to {file_path} error: {e}", exc_info=True)
 

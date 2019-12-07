@@ -58,10 +58,6 @@ def backup_files(client: Client) -> bool:
 
 def interval_hour_01() -> bool:
     # Execute every hour
-
-    # TODO Debug
-    logger.warning("Acquiring timer lock...")
-
     glovar.locks["text"].acquire()
     glovar.locks["message"].acquire()
     try:
@@ -85,9 +81,6 @@ def interval_hour_01() -> bool:
     except Exception as e:
         logger.warning(f"Interval hour 01 error: {e}", exc_info=True)
     finally:
-        # TODO Debug
-        logger.warning("Releasing timer lock...")
-
         glovar.locks["text"].release()
         glovar.locks["message"].release()
 

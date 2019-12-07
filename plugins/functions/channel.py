@@ -57,9 +57,6 @@ def forward_evidence(client: Client, message: Message, level: str,
     # Forward the message to the watch channel as evidence
     result = None
     try:
-        # TODO Debug
-        logger.warning(f"By {message.message_id} in {message.chat.id} - Forward start")
-
         # Basic information
         uid = message.from_user.id
         text = (f"{lang('project')}{lang('colon')}{code(glovar.sender)}\n"
@@ -116,10 +113,6 @@ def forward_evidence(client: Client, message: Message, level: str,
 
         result = result.message_id
         result = send_message(client, glovar.watch_channel_id, text, result)
-
-        # TODO Debug
-        logger.warning(f"By {message.message_id} in {message.chat.id} - Forward stop")
-
     except Exception as e:
         logger.warning(f"Forward evidence error: {e}", exc_info=True)
 
