@@ -669,9 +669,6 @@ def is_watch_message(client: Client, message: Message) -> str:
     result = ""
     need_delete = []
     try:
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id}")
-
         if not message.chat:
             return ""
 
@@ -718,13 +715,13 @@ def is_watch_message(client: Client, message: Message) -> str:
             if is_nm_text(forward_name) or is_lang("name", forward_name):
                 return ""
 
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 1")
-
         # Check the message's text
         if message_text:
             if is_wb_text(message_text, False) or is_lang("text", message_text):
                 return "ban"
+
+        # TODO Debug
+        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 1")
 
         # Check channel restriction
         if is_restricted_channel(message):
@@ -734,6 +731,9 @@ def is_watch_message(client: Client, message: Message) -> str:
         if forward_name and forward_name not in glovar.except_ids["long"]:
             if is_wb_text(forward_name, False) or is_lang("name", forward_name):
                 return "ban"
+
+        # TODO Debug
+        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 2")
 
         # Check the filename:
         file_name = get_filename(message)
@@ -748,12 +748,12 @@ def is_watch_message(client: Client, message: Message) -> str:
         if is_exe(message):
             return "ban"
 
+        # TODO Debug
+        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 3")
+
         # Check Telegram link
         if is_tgl(client, message):
             return "delete"
-
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 2")
 
         # Check image
         ocr = ""

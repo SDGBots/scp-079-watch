@@ -57,9 +57,6 @@ def check(client: Client, message: Message) -> bool:
         glovar.locks["message"].acquire()
 
     try:
-        # TODO Debug
-        logger.warning(f"By {message.message_id} in {message.chat.id} - I'm in")
-
         # Check declare status
         if is_declared_message(None, message):
             return True
