@@ -720,9 +720,6 @@ def is_watch_message(client: Client, message: Message) -> str:
             if is_wb_text(message_text, False) or is_lang("text", message_text):
                 return "ban"
 
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 1")
-
         # Check channel restriction
         if is_restricted_channel(message):
             return "ban"
@@ -731,9 +728,6 @@ def is_watch_message(client: Client, message: Message) -> str:
         if forward_name and forward_name not in glovar.except_ids["long"]:
             if is_wb_text(forward_name, False) or is_lang("name", forward_name):
                 return "ban"
-
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 2")
 
         # Check the filename:
         file_name = get_filename(message)
@@ -749,11 +743,14 @@ def is_watch_message(client: Client, message: Message) -> str:
             return "ban"
 
         # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 3")
+        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 1")
 
         # Check Telegram link
         if is_tgl(client, message):
             return "delete"
+
+        # TODO Debug
+        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 2")
 
         # Check image
         ocr = ""
@@ -800,6 +797,9 @@ def is_watch_message(client: Client, message: Message) -> str:
 
                         if is_wb_text(all_text, False):
                             return "ban"
+
+        # TODO Debug
+        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 3")
 
         # Check sticker title
         sticker_title = ""
