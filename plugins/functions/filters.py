@@ -487,6 +487,10 @@ def is_high_score_user(user: User) -> float:
 
 def is_lang(the_type: str, text: str) -> bool:
     # Check language
+
+    # TODO Debug
+    logger.warning(f"Start is lang")
+
     try:
         the_lang = get_lang(text)
 
@@ -503,6 +507,9 @@ def is_lang(the_type: str, text: str) -> bool:
             return the_lang in glovar.lang_text
     except Exception as e:
         logger.warning(f"Is lang error: {e}", exc_info=True)
+    finally:
+        # TODO Debug
+        logger.warning(f"Stop is lang")
 
     return False
 
@@ -734,6 +741,9 @@ def is_watch_message(client: Client, message: Message) -> str:
         if message_text:
             if is_wb_text(message_text, False) or is_lang("text", message_text):
                 return "ban"
+
+        # TODO Debug
+        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 5.5")
 
         # Check channel restriction
         if is_restricted_channel(message):
