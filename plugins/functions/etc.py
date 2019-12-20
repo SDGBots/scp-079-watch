@@ -238,6 +238,10 @@ def get_int(text: str) -> Optional[int]:
 def get_lang(text: str) -> str:
     # Get text's language code
     result = ""
+
+    # TODO Debug
+    logger.warning(f"Start get lang")
+
     try:
         # Remove unnecessary strings
         chinese_symbols = "～！、，。？￥…×—·．：；“”‘’（）〈〉《》「」『』【】〔〕"
@@ -255,6 +259,9 @@ def get_lang(text: str) -> str:
 
         second = ""
 
+        # TODO Debug
+        logger.warning(f"Stop get lang - 1")
+
         # Use langdetect, use guess to recheck
         try:
             first = detect(text)
@@ -265,6 +272,9 @@ def get_lang(text: str) -> str:
         except Exception as e:
             logger.info(f"First try error: {e}", exc_info=True)
 
+        # TODO Debug
+        logger.warning(f"Stop get lang - 2")
+
         # Use guess
         try:
             if not result and not second:
@@ -273,6 +283,9 @@ def get_lang(text: str) -> str:
                     result = second
         except Exception as e:
             logger.warning(f"Second try error: {e}", exc_info=True)
+
+        # TODO Debug
+        logger.warning(f"Stop get lang - 3")
 
         # Use langid
         try:
@@ -285,6 +298,9 @@ def get_lang(text: str) -> str:
 
     except Exception as e:
         logger.warning(f"Get lang error: {e}", exc_info=True)
+    finally:
+        # TODO Debug
+        logger.warning(f"Stop get lang")
 
     return result
 
