@@ -110,7 +110,8 @@ def get_messages(client: Client, cid: int, mids: Iterable[int]) -> Optional[List
     return result
 
 
-def get_sticker_title(client: Client, short_name: str, normal: bool = False, cache: bool = True) -> Optional[str]:
+def get_sticker_title(client: Client, short_name: str, normal: bool = False, printable: bool = True,
+                      cache: bool = True) -> Optional[str]:
     # Get sticker set's title
     result = None
     try:
@@ -127,7 +128,7 @@ def get_sticker_title(client: Client, short_name: str, normal: bool = False, cac
                 if isinstance(the_set, messages_StickerSet):
                     inner_set = the_set.set
                     if isinstance(inner_set, StickerSet):
-                        result = t2t(inner_set.title, normal)
+                        result = t2t(inner_set.title, normal, printable)
             except FloodWait as e:
                 flood_wait = True
                 wait_flood(e)
@@ -139,7 +140,7 @@ def get_sticker_title(client: Client, short_name: str, normal: bool = False, cac
     return result
 
 
-def get_user_bio(client: Client, uid: int, normal: bool = False) -> Optional[str]:
+def get_user_bio(client: Client, uid: int, normal: bool = False, printable: bool = False) -> Optional[str]:
     # Get user's bio
     result = None
     try:
@@ -153,7 +154,7 @@ def get_user_bio(client: Client, uid: int, normal: bool = False) -> Optional[str
             try:
                 user: UserFull = client.send(GetFullUser(id=user_id))
                 if user and user.about:
-                    result = t2t(user.about, normal)
+                    result = t2t(user.about, normal, printable)
             except FloodWait as e:
                 flood_wait = True
                 wait_flood(e)

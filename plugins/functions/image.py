@@ -131,7 +131,7 @@ def get_ocr(path: str, test: bool = False) -> str:
                 result = re.sub(r"\n", " ", result)
 
             result = re.sub(r"\s{2,}", " ", result)
-            result = t2t(result, False)
+            result = t2t(result, False, False)
     except Exception as e:
         logger.warning(f"Get OCR error: {e}", exc_info=True)
 
@@ -187,7 +187,7 @@ def get_qrcode(path: str) -> str:
 
             if result:
                 result = result[:-1]
-                result = t2t(result, False)
+                result = t2t(result, False, False)
     except Exception as e:
         logger.warning(f"Get qrcode error: {e}", exc_info=True)
 

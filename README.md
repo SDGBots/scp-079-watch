@@ -4,7 +4,8 @@ This bot is used to observe and track suspicious spam behaviors.
 
 ## How to use
 
-See [this article](https://scp-079.org/watch/).
+- See [this article](https://scp-079.org/watch/) to build a bot by yourself
+- Discuss [group](https://t.me/SCP_079_CHAT)
 
 ## To Do List
 

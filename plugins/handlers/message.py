@@ -122,7 +122,7 @@ def check_join(client: Client, message: Message) -> bool:
             if name and (is_nm_text(name) or is_lang("name", name)):
                 continue
 
-            bio = get_user_bio(client, uid, True)
+            bio = get_user_bio(client, uid, True, True)
             if bio and (is_bio_text(bio) or is_lang("bio", bio)):
                 continue
 

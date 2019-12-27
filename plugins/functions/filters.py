@@ -626,7 +626,7 @@ def is_tgl(client: Client, message: Message, friend: bool = False) -> bool:
             return True
 
         # Check text
-        message_text = get_text(message, True).lower()
+        message_text = get_text(message, True, True).lower()
         for bypass in bypass_list:
             message_text = message_text.replace(bypass, "")
 
@@ -702,7 +702,7 @@ def is_watch_message(client: Client, message: Message) -> str:
         logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 2")
 
         # Work with NOSPAM, check the message's text
-        message_text = get_text(message)
+        message_text = get_text(message, True, True)
         if message_text:
             if is_ban_text(message_text, False):
                 return ""
@@ -738,6 +738,7 @@ def is_watch_message(client: Client, message: Message) -> str:
         logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 5")
 
         # Check the message's text
+        message_text = get_text(message)
         if message_text:
             if is_wb_text(message_text, False) or is_lang("text", message_text):
                 return "ban"
@@ -763,7 +764,7 @@ def is_watch_message(client: Client, message: Message) -> str:
             if is_ban_text(file_name, False):
                 return ""
 
-            if is_wb_text(file_name, False):
+            if is_wb_text(file_name, False) or is_lang("text", file_name):
                 return "ban"
 
         # TODO Debug
