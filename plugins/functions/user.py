@@ -95,9 +95,6 @@ def add_watch_user(client: Client, the_type: str, uid: int, mid: int) -> bool:
 def terminate_user(client: Client, message: Message, the_type: str) -> bool:
     # Add user to watch list
     try:
-        # TODO Debug
-        logger.warning(f"By {message.message_id} in {message.chat.id} - Terminate {message.from_user.id}")
-
         # Check if it is necessary
         if is_class_d(None, message) or is_declared_message(None, message):
             return False
