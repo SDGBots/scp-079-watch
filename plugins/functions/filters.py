@@ -487,10 +487,6 @@ def is_high_score_user(user: User) -> float:
 
 def is_lang(the_type: str, text: str) -> bool:
     # Check language
-
-    # TODO Debug
-    logger.warning(f"Start is lang")
-
     try:
         the_lang = get_lang(text)
 
@@ -507,9 +503,6 @@ def is_lang(the_type: str, text: str) -> bool:
             return the_lang in glovar.lang_text
     except Exception as e:
         logger.warning(f"Is lang error: {e}", exc_info=True)
-    finally:
-        # TODO Debug
-        logger.warning(f"Stop is lang")
 
     return False
 
@@ -676,9 +669,6 @@ def is_watch_message(client: Client, message: Message) -> str:
     result = ""
     need_delete = []
     try:
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 1")
-
         if not message.chat:
             return ""
 
@@ -698,17 +688,11 @@ def is_watch_message(client: Client, message: Message) -> str:
             if detection:
                 return detection
 
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 2")
-
         # Work with NOSPAM, check the message's text
         message_text = get_text(message, True, True)
         if message_text:
             if is_ban_text(message_text, False):
                 return ""
-
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 3")
 
         # Bypass
         message_text = get_text(message)
@@ -725,17 +709,11 @@ def is_watch_message(client: Client, message: Message) -> str:
         if (pinned_text and message_text) and message_text in pinned_text:
             return ""
 
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 4")
-
         # Work with NOSPAM and default LANG, check the forward from name:
         forward_name = get_forward_name(message)
         if forward_name:
             if is_nm_text(forward_name) or is_lang("name", forward_name):
                 return ""
-
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 5")
 
         # Check the message's text
         message_text = get_text(message)
@@ -743,15 +721,9 @@ def is_watch_message(client: Client, message: Message) -> str:
             if is_wb_text(message_text, False) or is_lang("text", message_text):
                 return "ban"
 
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 5.5")
-
         # Check channel restriction
         if is_restricted_channel(message):
             return "ban"
-
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 6")
 
         # Check the forward from name:
         if forward_name and forward_name not in glovar.except_ids["long"]:
@@ -767,22 +739,13 @@ def is_watch_message(client: Client, message: Message) -> str:
             if is_wb_text(file_name, False) or is_lang("text", file_name):
                 return "ban"
 
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 7")
-
         # Check exe file
         if is_exe(message):
             return "ban"
 
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 8")
-
         # Check Telegram link
         if is_tgl(client, message):
             return "delete"
-
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 9")
 
         # Check image
         ocr = ""
@@ -793,31 +756,18 @@ def is_watch_message(client: Client, message: Message) -> str:
         image_path = big and get_downloaded_path(client, file_id, file_ref)
         image_path and need_delete.append(image_path)
 
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 10")
-
         # Check declared status
         if is_declared_message(None, message):
             return ""
 
         # Check hash
         image_hash = image_path and get_md5sum("file", image_path)
-
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 11")
-
         if image_path and image_hash and image_hash not in glovar.except_ids["temp"]:
             # Check declare status
             if is_declared_message(None, message):
                 return ""
 
-            # TODO Debug
-            logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 12")
-
             if big:
-                # TODO Debug
-                logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 13")
-
                 # Get QR code
                 qrcode = get_qrcode(image_path)
                 if qrcode:
@@ -828,10 +778,6 @@ def is_watch_message(client: Client, message: Message) -> str:
 
                 # Get OCR
                 ocr = get_ocr(image_path)
-
-                # TODO Debug
-                logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 14")
-
                 if ocr:
                     if is_ban_text(ocr, True):
                         return ""
@@ -846,9 +792,6 @@ def is_watch_message(client: Client, message: Message) -> str:
 
                         if is_wb_text(all_text, False):
                             return "ban"
-
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 15")
 
         # Check sticker title
         sticker_title = ""
@@ -866,9 +809,6 @@ def is_watch_message(client: Client, message: Message) -> str:
             sticker_title = get_sticker_title(client, sticker_name)
             if is_regex_text("wb", sticker_title) or is_lang("sticker", sticker_title):
                 return f"ban {sticker_title}"
-
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - 16")
 
         # Check preview
         preview_text = ""
@@ -1000,9 +940,6 @@ def is_watch_message(client: Client, message: Message) -> str:
     except Exception as e:
         logger.warning(f"Is watch message error: {e}", exc_info=True)
     finally:
-        # TODO Debug
-        logger.warning(f"Start filter by {message.message_id} in {message.chat.id} - leaving")
-
         for file in need_delete:
             thread(delete_file, (file,))
 

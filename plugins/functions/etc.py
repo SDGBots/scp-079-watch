@@ -30,7 +30,6 @@ from unicodedata import normalize
 from cryptography.fernet import Fernet
 from guess_language import guess_language
 from langdetect import detect
-from langid.langid import LanguageIdentifier, model
 from opencc import convert
 from pyrogram import InlineKeyboardMarkup, Message, MessageEntity, User
 from pyrogram.errors import FloodWait
@@ -39,9 +38,6 @@ from .. import glovar
 
 # Enable logging
 logger = logging.getLogger(__name__)
-
-# Init langid's custom identifier
-identifier = LanguageIdentifier.from_modelstring(model, norm_probs=True)
 
 
 def bold(text: Any) -> str:
@@ -238,10 +234,6 @@ def get_int(text: str) -> Optional[int]:
 def get_lang(text: str) -> str:
     # Get text's language code
     result = ""
-
-    # TODO Debug
-    logger.warning(f"Start get lang")
-
     try:
         # Remove unnecessary strings
         chinese_symbols = "～！、，。？￥…×—·．：；“”‘’（）〈〉《》「」『』【】〔〕"
@@ -259,9 +251,6 @@ def get_lang(text: str) -> str:
 
         second = ""
 
-        # TODO Debug
-        logger.warning(f"Stop get lang - 1")
-
         # Use langdetect, use guess to recheck
         try:
             first = detect(text)
@@ -272,9 +261,6 @@ def get_lang(text: str) -> str:
         except Exception as e:
             logger.info(f"First try error: {e}", exc_info=True)
 
-        # TODO Debug
-        logger.warning(f"Stop get lang - 2")
-
         # Use guess
         try:
             if not result and not second:
@@ -283,24 +269,8 @@ def get_lang(text: str) -> str:
                     result = second
         except Exception as e:
             logger.warning(f"Second try error: {e}", exc_info=True)
-
-        # TODO Debug
-        logger.warning(f"Stop get lang - 3")
-
-        # Use langid
-        try:
-            if not result:
-                third, score = identifier.classify(text)
-                if third and third not in glovar.lang_protect and score > 0.8:
-                    result = third
-        except Exception as e:
-            logger.warning(f"Third try error: {e}", exc_info=True)
-
     except Exception as e:
         logger.warning(f"Get lang error: {e}", exc_info=True)
-    finally:
-        # TODO Debug
-        logger.warning(f"Stop get lang")
 
     return result
 

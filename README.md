@@ -15,7 +15,7 @@ This bot is used to observe and track suspicious spam behaviors.
 
 - Python 3.6 or higher
 - Debian 10: `sudo apt update && sudo apt install libzbar0 opencc tesseract-ocr tesseract-ocr-chi-sim tesseract-ocr-chi-tra -y`
-- pip: `pip install -r requirements.txt` or `pip install -U APScheduler emoji guess_language-spirit langdetect langid OpenCC Pillow pyAesCrypt pyrogram[fast] pytesseract pyzbar`
+- pip: `pip install -r requirements.txt` or `pip install -U APScheduler emoji guess_language-spirit langdetect OpenCC Pillow pyAesCrypt pyrogram[fast] pytesseract pyzbar`
 
 ## Files
 

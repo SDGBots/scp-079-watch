@@ -4,8 +4,6 @@ cryptography==2.8
 emoji==0.5.4
 guess-language-spirit==0.5.3
 langdetect==1.0.7
-langid==1.1.6
-numpy==1.18.0
 OpenCC==0.2
 Pillow==6.2.1
 pyaes==1.6.1

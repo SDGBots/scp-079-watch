@@ -48,9 +48,6 @@ def check(client: Client, message: Message) -> bool:
 
     has_text = bool(message and (message.text or message.caption))
 
-    # TODO Debug
-    logger.warning(f"Acquiring lock by {message.message_id} in {message.chat.id} - Text: {has_text}")
-
     if has_text:
         glovar.locks["text"].acquire()
     else:
@@ -85,9 +82,6 @@ def check(client: Client, message: Message) -> bool:
     except Exception as e:
         logger.warning(f"Check error: {e}", exc_info=True)
     finally:
-        # TODO Debug
-        logger.warning(f"Releasing lock by {message.message_id} in {message.chat.id} - Text: {has_text}")
-
         if has_text:
             glovar.locks["text"].release()
         else:
