@@ -725,12 +725,12 @@ def is_watch_message(client: Client, message: Message) -> str:
         if is_restricted_channel(message):
             return "ban"
 
-        # Check the forward from name:
+        # Check the forward from name
         if forward_name and forward_name not in glovar.except_ids["long"]:
             if is_wb_text(forward_name, False) or is_lang("name", forward_name):
                 return "ban"
 
-        # Check the filename:
+        # Check the filename
         file_name = get_filename(message)
         if file_name:
             if is_regex_text("fil", file_name) or is_ban_text(file_name, False):
