@@ -733,7 +733,7 @@ def is_watch_message(client: Client, message: Message) -> str:
         # Check the filename:
         file_name = get_filename(message)
         if file_name:
-            if is_ban_text(file_name, False):
+            if is_regex_text("fil", file_name) or is_ban_text(file_name, False):
                 return ""
 
             if is_wb_text(file_name, False) or is_lang("text", file_name):
