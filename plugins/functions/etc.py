@@ -33,6 +33,7 @@ from langdetect import detect
 from opencc import convert
 from pyrogram import InlineKeyboardMarkup, Message, MessageEntity, User
 from pyrogram.errors import FloodWait
+from textblob import TextBlob
 
 from .. import glovar
 
@@ -76,7 +77,7 @@ def code_block(text: Any) -> str:
     return ""
 
 
-def crypt_str(operation: str, text: str, key: str) -> str:
+def crypt_str(operation: str, text: str, key: bytes) -> str:
     # Encrypt or decrypt a string
     result = ""
     try:
@@ -234,43 +235,94 @@ def get_int(text: str) -> Optional[int]:
 def get_lang(text: str) -> str:
     # Get text's language code
     result = ""
+
     try:
         # Remove unnecessary strings
         chinese_symbols = "～！、，。？￥…×—·．：；“”‘’（）〈〉《》「」『』【】〔〕"
         english_symbols = """`~!@#$%^&*()-=_+[]\\{}|;':",./<>?"""
-        symbols = chinese_symbols + english_symbols
+        special_symbols = "£"
+        symbols = chinese_symbols + english_symbols + special_symbols
         text = "".join(t for t in text if t not in symbols and t not in glovar.emoji_set)
 
         # Avoid short name
-        if len(text) < 10:
+        if len(text) < 20:
             text = "".join(t for t in text if t.isprintable())
+
+            if not text.strip():
+                return ""
+
+            text = text * (20 // len(text) + 1)
 
         # Detect
         if not text.strip():
             return ""
 
-        second = ""
+        # Init
+        recheck = ""
 
-        # Use langdetect, use guess to recheck
-        try:
-            first = detect(text)
-            if first and first not in glovar.lang_protect:
-                second = guess_language(text)
-                if second and second not in glovar.lang_protect:
-                    result = first
-        except Exception as e:
-            logger.info(f"First try error: {e}", exc_info=True)
+        # Use langdetect, use textblob to recheck
+        result = get_lang_langdetect(text)
+
+        if result:
+            recheck = get_lang_textblob(text)
+
+        lang_default = glovar.lang_bio | glovar.lang_name | glovar.lang_sticker | glovar.lang_text
+
+        if result and recheck and (result == recheck or recheck not in lang_default):
+            return recheck
+        elif result:
+            return ""
 
         # Use guess
-        try:
-            if not result and not second:
-                second = guess_language(text)
-                if second and not (second == "UNKNOWN" or second in glovar.lang_protect):
-                    result = second
-        except Exception as e:
-            logger.warning(f"Second try error: {e}", exc_info=True)
+        result = get_lang_guess(text)
     except Exception as e:
         logger.warning(f"Get lang error: {e}", exc_info=True)
+
+    return result
+
+
+def get_lang_guess(text: str) -> str:
+    # Get language using guess
+    result = ""
+
+    try:
+        result = guess_language(text)
+
+        if not result or (result != "UNKNOWN" and result in glovar.lang_protect):
+            return ""
+    except Exception as e:
+        logger.info(f"Get lang guess error: {e}", exc_info=True)
+
+    return result
+
+
+def get_lang_langdetect(text: str) -> str:
+    # Get language using langdetect
+    result = ""
+
+    try:
+        result = detect(text)
+
+        if not result or result in glovar.lang_protect:
+            return ""
+    except Exception as e:
+        logger.info(f"Get lang langdetect error: {e}", exc_info=True)
+
+    return result
+
+
+def get_lang_textblob(text: str) -> str:
+    # Get language using textblob
+    result = ""
+
+    try:
+        b = TextBlob(text)
+        result = b.detect_language()
+
+        if not result or result in glovar.lang_protect:
+            return ""
+    except Exception as e:
+        logger.info(f"Get lang textblob error: {e}", exc_info=True)
 
     return result
 

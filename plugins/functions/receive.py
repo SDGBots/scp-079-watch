@@ -371,16 +371,14 @@ def receive_remove_score(data: int) -> bool:
     return False
 
 
-def receive_remove_watch(data: dict) -> bool:
+def receive_remove_watch(data: int) -> bool:
     # Receive removed watching users
     try:
         # Basic data
-        uid = data["id"]
-        the_type = data["type"]
+        uid = data
 
-        if the_type == "all":
-            glovar.user_ids.pop(uid, {})
-
+        # Reset watch status
+        glovar.user_ids.pop(uid, {})
         save("user_ids")
 
         return True
