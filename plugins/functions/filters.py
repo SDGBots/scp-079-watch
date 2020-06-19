@@ -311,10 +311,12 @@ def is_class_e_user(user: Union[int, User]) -> bool:
         if uid in glovar.bot_ids:
             return True
 
-        group_list = list(glovar.admin_ids)
-        for gid in group_list:
-            if uid in glovar.admin_ids.get(gid, set()):
-                return True
+        # TODO
+        # group_list = list(glovar.trust_ids)
+        #
+        # for gid in group_list:
+        #     if uid in glovar.trust_ids.get(gid, set()):
+        #         return True
     except Exception as e:
         logger.warning(f"Is class e user error: {e}", exc_info=True)
 
@@ -812,7 +814,9 @@ def is_watch_message(client: Client, message: Message) -> str:
 
         # Check preview
         preview_text = ""
+
         web_page: WebPage = message.web_page
+
         if web_page:
             preview_text = web_page.display_url + "\n\n"
 

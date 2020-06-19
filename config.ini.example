@@ -21,7 +21,7 @@ long_id = [DATA EXPUNGED]
 noflood_id = [DATA EXPUNGED]
 noporn_id = [DATA EXPUNGED]
 nospam_id = [DATA EXPUNGED]
-recheck_id = [DATA EXPUNGED]
+recheck_id = 1
 tip_id = [DATA EXPUNGED]
 user_id = [DATA EXPUNGED]
 warn_id = [DATA EXPUNGED]
@@ -32,33 +32,33 @@ hide_channel_id = [DATA EXPUNGED]
 watch_channel_id = [DATA EXPUNGED]
 
 [custom]
-aio = [DATA EXPUNGED]
-backup = [DATA EXPUNGED]
-date_reset = [DATA EXPUNGED]
-image_size = [DATA EXPUNGED]
-invalid = [DATA EXPUNGED]
-lang_bio = [DATA EXPUNGED]
-lang_name = [DATA EXPUNGED]
-lang_protect = [DATA EXPUNGED]
-lang_sticker = [DATA EXPUNGED]
-lang_text = [DATA EXPUNGED]
-limit_ban = [DATA EXPUNGED]
-limit_delete = [DATA EXPUNGED]
+aio = False
+backup = False
+date_reset = 1st mon
+image_size = 2097152
+invalid = admin admins BotFather gamebot gif SpamBot Stickers telegram vote
+lang_bio = fa
+lang_name = fa ur ar
+lang_protect = en zh
+lang_sticker = fa ar am
+lang_text = fa ur ar am bn bg
+limit_ban = 5
+limit_delete = 5
 project_link = https://scp-079.org/watch/
 project_name = SCP-079-WATCH
-time_ban = [DATA EXPUNGED]
-time_delete = [DATA EXPUNGED]
-time_forgive = [DATA EXPUNGED]
-time_new = [DATA EXPUNGED]
-zh_cn = [DATA EXPUNGED]
+time_ban = 10800
+time_delete = 7200
+time_forgive = 21600
+time_new = 172800
+zh_cn = True
 
 [emoji]
-emoji_ad_single = [DATA EXPUNGED]
-emoji_ad_total = [DATA EXPUNGED]
-emoji_many = [DATA EXPUNGED]
-emoji_protect = [DATA EXPUNGED]
-emoji_wb_single = [DATA EXPUNGED]
-emoji_wb_total = [DATA EXPUNGED]
+emoji_ad_single = 15
+emoji_ad_total = 30
+emoji_many = 15
+emoji_protect = \U0001F642
+emoji_wb_single = 10
+emoji_wb_total = 15
 
 [encrypt]
 key = [DATA EXPUNGED]
