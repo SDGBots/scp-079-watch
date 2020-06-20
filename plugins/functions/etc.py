@@ -18,12 +18,13 @@
 
 import logging
 import re
+from datetime import datetime
 from hashlib import md5
 from html import escape
 from random import choice, uniform
 from string import ascii_letters, digits
 from threading import Thread, Timer
-from time import sleep, time
+from time import localtime, sleep, strftime, time
 from typing import Any, Callable, Dict, List, Optional, Union
 from unicodedata import normalize
 
@@ -406,6 +407,21 @@ def get_now() -> int:
     return result
 
 
+def get_readable_time(secs: int = 0, the_format: str = "%Y%m%d%H%M%S") -> str:
+    # Get a readable time string
+    result = ""
+
+    try:
+        if secs:
+            result = datetime.utcfromtimestamp(secs).strftime(the_format)
+        else:
+            result = strftime(the_format, localtime())
+    except Exception as e:
+        logger.warning(f"Get readable time error: {e}", exc_info=True)
+
+    return result
+
+
 def get_report_record(message: Message) -> Dict[str, str]:
     # Get report message's full record
     record = {
@@ -607,18 +623,18 @@ def t2t(text: str, normal: bool, printable: bool) -> str:
     return text
 
 
-def thread(target: Callable, args: tuple, daemon: bool = True) -> bool:
+def thread(target: Callable, args: tuple, kwargs: dict = None, daemon: bool = True) -> bool:
     # Call a function using thread
-    try:
-        t = Thread(target=target, args=args)
-        t.daemon = daemon
-        t.start()
+    result = False
 
-        return True
+    try:
+        t = Thread(target=target, args=args, kwargs=kwargs, daemon=daemon)
+        t.daemon = daemon
+        result = t.start() or True
     except Exception as e:
         logger.warning(f"Thread error: {e}", exc_info=True)
 
-    return False
+    return result
 
 
 def wait_flood(e: FloodWait) -> bool:

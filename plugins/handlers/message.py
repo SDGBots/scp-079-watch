@@ -186,7 +186,7 @@ def process_data(client: Client, message: Message) -> bool:
 
                 if action == "version":
                     if action_type == "ask":
-                        receive_version_ask(client, data)
+                        receive_version_ask(client, message, data)
 
             elif sender == "LANG":
 

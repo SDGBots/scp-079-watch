@@ -24,6 +24,7 @@ from pyrogram import Client, Message
 from pyrogram.errors import FloodWait
 
 from .. import glovar
+from .decorators import threaded
 from .etc import code, code_block, get_forward_name, get_md5sum, get_text, lang, thread, wait_flood
 from .file import crypt_file, data_to_file, delete_file, get_new_path
 from .image import get_file_id
@@ -149,22 +150,28 @@ def get_content(message: Message) -> str:
     return result
 
 
-def send_help(client: Client, cid: int, text: str) -> bool:
-    # Request HIDE to help to send a text in the channel
+@threaded()
+def send_help(client: Client, cid: int, text: str, mid: int = None) -> bool:
+    # Request HIDE to help to send a text in a chat
+    result = False
+
     try:
         file = data_to_file(text)
-        share_data(
+        result = share_data(
             client=client,
             receivers=["HIDE"],
             action="help",
             action_type="send",
-            data=cid,
+            data={
+                "chat_id": cid,
+                "message_id": mid
+            },
             file=file
         )
     except Exception as e:
         logger.warning(f"Send help error: {e}", exc_info=True)
 
-    return False
+    return result
 
 
 def share_data(client: Client, receivers: List[str], action: str, action_type: str,
