@@ -20,7 +20,7 @@ import logging
 import re
 
 from PIL import Image, ImageEnhance
-from pyrogram import Message
+from pyrogram.types import Message
 from pytesseract import image_to_string
 from pyzbar.pyzbar import decode
 

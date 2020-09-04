@@ -23,7 +23,8 @@ from json import loads
 from subprocess import run, PIPE
 from typing import Any
 
-from pyrogram import Client, Message
+from pyrogram import Client
+from pyrogram.types import Message
 
 from .. import glovar
 from .channel import get_content, send_help, share_data

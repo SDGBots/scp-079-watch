@@ -20,15 +20,15 @@ import logging
 from json import dumps
 from typing import List, Optional, Union
 
-from pyrogram import Client, Message
-from pyrogram.errors import FloodWait
+from pyrogram import Client
+from pyrogram.types import Message
 
 from .. import glovar
 from .decorators import threaded
-from .etc import code, code_block, get_forward_name, get_md5sum, get_text, lang, thread, wait_flood
+from .etc import code, code_block, get_forward_name, get_md5sum, get_text, lang, thread
 from .file import crypt_file, data_to_file, delete_file, get_new_path
 from .image import get_file_id
-from .telegram import send_document, send_message
+from .telegram import forward_messages, send_document, send_message
 
 # Enable logging
 logger = logging.getLogger(__name__)
@@ -97,20 +97,12 @@ def forward_evidence(client: Client, message: Message, level: str,
             result = send_message(client, glovar.watch_channel_id, text)
             return result
 
-        flood_wait = True
-        while flood_wait:
-            flood_wait = False
-            try:
-                result = message.forward(
-                    chat_id=glovar.watch_channel_id,
-                    disable_notification=True
-                )
-            except FloodWait as e:
-                flood_wait = True
-                wait_flood(e)
-            except Exception as e:
-                logger.info(f"Forward evidence message error: {e}", exc_info=True)
-                return False
+        result = forward_messages(
+            client=client,
+            cid=glovar.watch_channel_id,
+            fid=message.chat.id,
+            mids=message.message_id
+        )
 
         result = result.message_id
         result = send_message(client, glovar.watch_channel_id, text, result)

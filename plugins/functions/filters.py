@@ -22,7 +22,8 @@ from copy import deepcopy
 from string import ascii_lowercase
 from typing import Match, Optional, Union
 
-from pyrogram import Client, Filters, Message, User, WebPage
+from pyrogram import Client, filters
+from pyrogram.types import Message, User, WebPage
 
 from .. import glovar
 from .channel import get_content
@@ -38,7 +39,7 @@ from .telegram import get_sticker_title, resolve_username
 logger = logging.getLogger(__name__)
 
 
-def is_class_c(_, message: Message) -> bool:
+def is_class_c(_, __, message: Message) -> bool:
     # Check if the message is sent from Class C personnel
     try:
         if not message.from_user:
@@ -56,7 +57,7 @@ def is_class_c(_, message: Message) -> bool:
     return False
 
 
-def is_class_d(_, message: Message) -> bool:
+def is_class_d(_, __, message: Message) -> bool:
     # Check if the message is Class D object
     try:
         if message.from_user:
@@ -79,7 +80,7 @@ def is_class_d(_, message: Message) -> bool:
     return False
 
 
-def is_class_e(_, message: Message) -> bool:
+def is_class_e(_, __, message: Message) -> bool:
     # Check if the message is Class E object
     try:
         if message.forward_from_chat:
@@ -101,7 +102,7 @@ def is_class_e(_, message: Message) -> bool:
     return False
 
 
-def is_declared_message(_, message: Message) -> bool:
+def is_declared_message(_, __, message: Message) -> bool:
     # Check if the message is declared by other bots
     try:
         if not message.chat:
@@ -116,7 +117,7 @@ def is_declared_message(_, message: Message) -> bool:
     return False
 
 
-def is_from_user(_, message: Message) -> bool:
+def is_from_user(_, __, message: Message) -> bool:
     # Check if the message is sent from a user
     try:
         if message.from_user and message.from_user.id != 777000:
@@ -127,7 +128,7 @@ def is_from_user(_, message: Message) -> bool:
     return False
 
 
-def is_hide_channel(_, message: Message) -> bool:
+def is_hide_channel(_, __, message: Message) -> bool:
     # Check if the message is sent from the hide channel
     try:
         if not message.chat:
@@ -142,7 +143,7 @@ def is_hide_channel(_, message: Message) -> bool:
     return False
 
 
-def is_new_user(_, message: Message) -> bool:
+def is_new_user(_, __, message: Message) -> bool:
     # Check if the message is sent from a new joined member
     try:
         if not message.from_user:
@@ -162,7 +163,7 @@ def is_new_user(_, message: Message) -> bool:
     return False
 
 
-def is_watch_ban(_, message: Message) -> bool:
+def is_watch_ban(_, __, message: Message) -> bool:
     # Check if the message is sent by a watch ban user
     try:
         if not message.from_user:
@@ -175,7 +176,7 @@ def is_watch_ban(_, message: Message) -> bool:
     return False
 
 
-def is_watch_delete(_, message: Message) -> bool:
+def is_watch_delete(_, __, message: Message) -> bool:
     # Check if the message is sent by a watch delete user
     try:
         if not message.from_user:
@@ -188,47 +189,47 @@ def is_watch_delete(_, message: Message) -> bool:
     return False
 
 
-class_c = Filters.create(
+class_c = filters.create(
     func=is_class_c,
     name="Class C"
 )
 
-class_d = Filters.create(
+class_d = filters.create(
     func=is_class_d,
     name="Class D"
 )
 
-class_e = Filters.create(
+class_e = filters.create(
     func=is_class_e,
     name="Class E"
 )
 
-declared_message = Filters.create(
+declared_message = filters.create(
     func=is_declared_message,
     name="Declared message"
 )
 
-from_user = Filters.create(
+from_user = filters.create(
     func=is_from_user,
     name="From User"
 )
 
-hide_channel = Filters.create(
+hide_channel = filters.create(
     func=is_hide_channel,
     name="Hide Channel"
 )
 
-new_user = Filters.create(
+new_user = filters.create(
     func=is_new_user,
     name="New User"
 )
 
-watch_ban = Filters.create(
+watch_ban = filters.create(
     func=is_watch_ban,
     name="Watch Ban"
 )
 
-watch_delete = Filters.create(
+watch_delete = filters.create(
     func=is_watch_delete,
     name="Watch Delete"
 )
@@ -759,14 +760,14 @@ def is_watch_message(client: Client, message: Message) -> str:
         image_path and need_delete.append(image_path)
 
         # Check declared status
-        if is_declared_message(None, message):
+        if is_declared_message(None, None, message):
             return ""
 
         # Check hash
         image_hash = image_path and get_md5sum("file", image_path)
         if image_path and image_hash and image_hash not in glovar.except_ids["temp"]:
             # Check declare status
-            if is_declared_message(None, message):
+            if is_declared_message(None, None, message):
                 return ""
 
             if big:
@@ -843,14 +844,14 @@ def is_watch_message(client: Client, message: Message) -> str:
                 image_path and need_delete.append(image_path)
 
                 # Check declared status
-                if is_declared_message(None, message):
+                if is_declared_message(None, None, message):
                     return ""
 
                 # Check hash
                 image_hash = image_path and get_md5sum("file", image_path)
                 if image_path and image_hash and image_hash not in glovar.except_ids["temp"]:
                     # Check declare status
-                    if is_declared_message(None, message):
+                    if is_declared_message(None, None, message):
                         return ""
 
                     # Get QR code
@@ -881,7 +882,7 @@ def is_watch_message(client: Client, message: Message) -> str:
         # Start detect watch delete
 
         # Check if the user is already in watch delete
-        if is_watch_delete(None, message):
+        if is_watch_delete(None, None, message):
             return ""
 
         # Check detected records

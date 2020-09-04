@@ -18,11 +18,12 @@
 
 import logging
 
-from pyrogram import Client, Filters, Message
+from pyrogram import Client, filters
+from pyrogram.types import Message
 
 from .. import glovar
 from ..functions.channel import get_content
-from ..functions.etc import get_full_name, get_now, thread
+from ..functions.etc import get_full_name, get_now, t2t, thread
 from ..functions.file import save
 from ..functions.filters import class_c, class_d, class_e, declared_message, from_user, hide_channel, is_bio_text
 from ..functions.filters import is_nm_text, is_declared_message, is_high_score_user, is_lang, is_watch_message
@@ -34,13 +35,13 @@ from ..functions.receive import receive_remove_watch, receive_rollback, receive_
 from ..functions.receive import receive_user_score, receive_version_ask, receive_watch_user
 from ..functions.timers import backup_files, send_count
 from ..functions.user import terminate_user
-from ..functions.telegram import get_user_bio
+from ..functions.telegram import get_user_full
 
 # Enable logging
 logger = logging.getLogger(__name__)
 
 
-@Client.on_message(Filters.incoming & Filters.group & ~Filters.service
+@Client.on_message(filters.incoming & filters.group & ~filters.service
                    & from_user & ~class_c & ~class_d & ~class_e & new_user & ~watch_ban
                    & ~declared_message)
 def check(client: Client, message: Message) -> bool:
@@ -55,7 +56,7 @@ def check(client: Client, message: Message) -> bool:
 
     try:
         # Check declare status
-        if is_declared_message(None, message):
+        if is_declared_message(None, None, message):
             return True
 
         # Do not track again
@@ -90,7 +91,7 @@ def check(client: Client, message: Message) -> bool:
     return False
 
 
-@Client.on_message(Filters.incoming & Filters.group & Filters.new_chat_members
+@Client.on_message(filters.incoming & filters.group & filters.new_chat_members
                    & from_user & ~class_c)
 def check_join(client: Client, message: Message) -> bool:
     # Check new joined user
@@ -116,7 +117,13 @@ def check_join(client: Client, message: Message) -> bool:
             if name and (is_nm_text(name) or is_lang("name", name)):
                 continue
 
-            bio = get_user_bio(client, uid, True, True)
+            user = get_user_full(client, uid)
+
+            if not user or not user.about:
+                bio = ""
+            else:
+                bio = t2t(user.about, True, True, True)
+
             if bio and (is_bio_text(bio) or is_lang("bio", bio)):
                 continue
 
@@ -137,7 +144,7 @@ def check_join(client: Client, message: Message) -> bool:
     return False
 
 
-@Client.on_message((Filters.incoming or glovar.aio) & Filters.channel
+@Client.on_message((filters.incoming or glovar.aio) & filters.channel
                    & hide_channel)
 def process_data(client: Client, message: Message) -> bool:
     # Process the data in exchange channel

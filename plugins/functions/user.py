@@ -18,7 +18,8 @@
 
 import logging
 
-from pyrogram import Client, Message, User
+from pyrogram import Client
+from pyrogram.types import Message, User
 
 from .. import glovar
 from .channel import forward_evidence, share_watch_user
@@ -96,7 +97,7 @@ def terminate_user(client: Client, message: Message, the_type: str) -> bool:
     # Add user to watch list
     try:
         # Check if it is necessary
-        if is_class_d(None, message) or is_declared_message(None, message):
+        if is_class_d(None, None, message) or is_declared_message(None, None, message):
             return False
 
         gid = message.chat.id

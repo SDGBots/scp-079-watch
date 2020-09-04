@@ -22,6 +22,7 @@ from datetime import datetime
 from hashlib import md5
 from html import escape
 from random import choice, uniform
+from re import sub
 from string import ascii_letters, digits
 from threading import Thread, Timer
 from time import localtime, sleep, strftime, time
@@ -31,9 +32,9 @@ from unicodedata import normalize
 from cryptography.fernet import Fernet
 from guess_language import guess_language
 from langdetect import detect
-from opencc import convert
-from pyrogram import InlineKeyboardMarkup, Message, MessageEntity, User
+from opencc import OpenCC
 from pyrogram.errors import FloodWait
+from pyrogram.types import InlineKeyboardMarkup, Message, MessageEntity, User
 from textblob import TextBlob
 
 from .. import glovar
@@ -41,46 +42,65 @@ from .. import glovar
 # Enable logging
 logger = logging.getLogger(__name__)
 
+# Init Opencc
+converter = OpenCC(config="t2s.json")
+
 
 def bold(text: Any) -> str:
     # Get a bold text
+    result = ""
+
     try:
-        text = str(text).strip()
-        if text:
-            return f"<b>{escape(text)}</b>"
+        result = str(text).strip()
+
+        if not result:
+            return ""
+
+        result = f"<b>{escape(result)}</b>"
     except Exception as e:
         logger.warning(f"Bold error: {e}", exc_info=True)
 
-    return ""
+    return result
 
 
 def code(text: Any) -> str:
     # Get a code text
+    result = ""
+
     try:
-        text = str(text).strip()
-        if text:
-            return f"<code>{escape(text)}</code>"
+        result = str(text).strip()
+
+        if not result:
+            return ""
+
+        result = f"<code>{escape(result)}</code>"
     except Exception as e:
         logger.warning(f"Code error: {e}", exc_info=True)
 
-    return ""
+    return result
 
 
 def code_block(text: Any) -> str:
     # Get a code block text
+    result = ""
+
     try:
-        text = str(text).rstrip()
-        if text:
-            return f"<pre>{escape(text)}</pre>"
+        result = str(text).rstrip()
+
+        if not result:
+            return ""
+
+        result = f"<pre>{escape(result)}</pre>"
     except Exception as e:
         logger.warning(f"Code block error: {e}", exc_info=True)
 
-    return ""
+    return result
 
 
 def crypt_str(operation: str, text: str, key: bytes) -> str:
     # Encrypt or decrypt a string
     result = ""
+
     try:
         f = Fernet(key)
         text = text.encode("utf-8")
@@ -97,28 +117,32 @@ def crypt_str(operation: str, text: str, key: bytes) -> str:
     return result
 
 
-def delay(secs: int, target: Callable, args: list) -> bool:
+def delay(secs: int, target: Callable, args: list = None) -> bool:
     # Call a function with delay
+    result = False
+
     try:
         t = Timer(secs, target, args)
         t.daemon = True
-        t.start()
-
-        return True
+        result = t.start() or True
     except Exception as e:
         logger.warning(f"Delay error: {e}", exc_info=True)
 
-    return False
+    return result
 
 
 def general_link(text: Union[int, str], link: str) -> str:
     # Get a general link
     result = ""
+
     try:
         text = str(text).strip()
         link = link.strip()
-        if text and link:
-            result = f'<a href="{link}">{escape(text)}</a>'
+
+        if not (text and link):
+            return ""
+
+        result = f'<a href="{link}">{escape(text)}</a>'
     except Exception as e:
         logger.warning(f"General link error: {e}", exc_info=True)
 
@@ -127,21 +151,27 @@ def general_link(text: Union[int, str], link: str) -> str:
 
 def get_channel_link(message: Union[int, Message]) -> str:
     # Get a channel reference link
-    text = ""
+    result = ""
+
     try:
-        text = "https://t.me/"
+        result = "https://t.me/"
+
         if isinstance(message, int):
-            text += f"c/{str(message)[4:]}"
+            result += f"c/{str(message)[4:]}"
+            return result
+
+        if not message.chat:
+            return result
+
+        if message.chat.username:
+            result += f"{message.chat.username}"
         else:
-            if message.chat.username:
-                text += f"{message.chat.username}"
-            else:
-                cid = message.chat.id
-                text += f"c/{str(cid)[4:]}"
+            cid = message.chat.id
+            result += f"c/{str(cid)[4:]}"
     except Exception as e:
         logger.warning(f"Get channel link error: {e}", exc_info=True)
 
-    return text
+    return result
 
 
 def get_entity_text(message: Message, entity: MessageEntity) -> str:
@@ -163,68 +193,74 @@ def get_entity_text(message: Message, entity: MessageEntity) -> str:
     return result
 
 
-def get_filename(message: Message, normal: bool = False, printable: bool = False) -> str:
+def get_filename(message: Message, normal: bool = False, printable: bool = False, pure: bool = False) -> str:
     # Get file's filename
-    text = ""
-    try:
-        if message.document:
-            if message.document.file_name:
-                text += message.document.file_name
-        elif message.audio:
-            if message.audio.file_name:
-                text += message.audio.file_name
+    result = ""
 
-        if text:
-            text = t2t(text, normal, printable)
+    try:
+        if not message.media:
+            return ""
+
+        if message.document and message.document.file_name:
+            result = message.document.file_name
+        elif message.audio and message.audio.file_name:
+            result = message.audio.file_name
+
+        result = t2t(result, normal, printable, pure)
     except Exception as e:
         logger.warning(f"Get filename error: {e}", exc_info=True)
 
-    return text
+    return result
 
 
-def get_forward_name(message: Message, normal: bool = False, printable: bool = False) -> str:
+def get_forward_name(message: Message, normal: bool = False, printable: bool = False, pure: bool = False) -> str:
     # Get forwarded message's origin sender's name
-    text = ""
+    result = ""
+
     try:
+        if not message.forward_date:
+            return ""
+
         if message.forward_from:
             user = message.forward_from
-            text = get_full_name(user, normal, printable)
+            result = get_full_name(user, normal, printable, pure)
         elif message.forward_sender_name:
-            text = message.forward_sender_name
+            result = message.forward_sender_name
         elif message.forward_from_chat:
             chat = message.forward_from_chat
-            text = chat.title
+            result = chat.title
 
-        if text:
-            text = t2t(text, normal, printable)
+        result = t2t(result, normal, printable, pure)
     except Exception as e:
         logger.warning(f"Get forward name error: {e}", exc_info=True)
 
-    return text
+    return result
 
 
-def get_full_name(user: User, normal: bool = False, printable: bool = False) -> str:
+def get_full_name(user: User, normal: bool = False, printable: bool = False, pure: bool = False) -> str:
     # Get user's full name
-    text = ""
+    result = ""
+
     try:
         if not user or user.is_deleted:
             return ""
 
-        text = user.first_name
-        if user.last_name:
-            text += f" {user.last_name}"
+        result = user.first_name
 
-        if text and normal:
-            text = t2t(text, normal, printable)
+        if user.last_name:
+            result += f" {user.last_name}"
+
+        result = t2t(result, normal, printable, pure)
     except Exception as e:
         logger.warning(f"Get full name error: {e}", exc_info=True)
 
-    return text
+    return result
 
 
 def get_int(text: str) -> Optional[int]:
     # Get a int from a string
     result = None
+
     try:
         result = int(text)
     except Exception as e:
@@ -399,6 +435,7 @@ def get_md5sum(the_type: str, ctx: str) -> str:
 def get_now() -> int:
     # Get time for now
     result = 0
+
     try:
         result = int(time())
     except Exception as e:
@@ -569,6 +606,7 @@ def lang(text: str) -> str:
 def mention_id(uid: int) -> str:
     # Get a ID mention string
     result = ""
+
     try:
         result = general_link(f"{uid}", f"tg://user?id={uid}")
     except Exception as e:
@@ -591,36 +629,42 @@ def message_link(message: Message) -> str:
 
 def random_str(i: int) -> str:
     # Get a random string
-    text = ""
+    result = ""
+
     try:
-        text = "".join(choice(ascii_letters + digits) for _ in range(i))
+        result = "".join(choice(ascii_letters + digits) for _ in range(i))
     except Exception as e:
         logger.warning(f"Random str error: {e}", exc_info=True)
 
-    return text
+    return result
 
 
-def t2t(text: str, normal: bool, printable: bool) -> str:
+def t2t(text: str, normal: bool, printable: bool, pure: bool = False) -> str:
     # Convert the string, text to text
+    result = text
+
     try:
-        if not text:
+        if not result:
             return ""
 
-        if normal:
+        if glovar.normalize and normal:
             for special in ["spc", "spe"]:
-                text = "".join(eval(f"glovar.{special}_dict").get(t, t) for t in text)
+                result = "".join(eval(f"glovar.{special}_dict").get(t, t) for t in result)
 
-            text = normalize("NFKC", text)
+            result = normalize("NFKC", result)
+
+        if glovar.normalize and normal and "Hans" in glovar.lang:
+            result = converter.convert(result)
 
         if printable:
-            text = "".join(t for t in text if t.isprintable() or t in {"\n", "\r", "\t"})
+            result = "".join(t for t in result if t.isprintable() or t in {"\n", "\r", "\t"})
 
-        if normal and glovar.zh_cn:
-            text = convert(text, config="t2s.json")
+        if pure:
+            result = sub(r"""[^\da-zA-Z一-龥.,:'"?!~;()。，？！～@“”]""", "", result)
     except Exception as e:
         logger.warning(f"T2T error: {e}", exc_info=True)
 
-    return text
+    return result
 
 
 def thread(target: Callable, args: tuple, kwargs: dict = None, daemon: bool = True) -> bool:
@@ -639,11 +683,11 @@ def thread(target: Callable, args: tuple, kwargs: dict = None, daemon: bool = Tr
 
 def wait_flood(e: FloodWait) -> bool:
     # Wait flood secs
-    try:
-        sleep(e.x + uniform(0.5, 1.0))
+    result = False
 
-        return True
+    try:
+        result = sleep(e.x + uniform(0.5, 1.0)) or True
     except Exception as e:
         logger.warning(f"Wait flood error: {e}", exc_info=True)
 
-    return False
+    return result
